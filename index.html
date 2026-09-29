@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>真心话大冒险 · 抽卡</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --theme-color: #6366f1;
+    --theme-soft:  #f5f5ff;
+
+    --c-diff-1: #059669;
+    --c-diff-2: #2563eb;
+    --c-diff-3: #7c3aed;
+
+    --c-priv-1: #0891b2;
+    --c-priv-2: #d97706;
+    --c-priv-3: #ea580c;
+    --c-priv-4: #dc2626;
+
+    --c-truth: #4f46e5;
+    --c-dare:  #db2777;
+  }
+
+  html { height: 100%; }
+
+  body {
+    position: relative;
+    min-height: 100%;
+    display: flex;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .bg-layer {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+    pointer-events: none;
+  }
+  .bg-layer.visible { opacity: 1; }
+
+  .fab-fs,
+  .fab-sound {
+    position: fixed;
+    z-index: 9999;
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+    color: #4a4a5c;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    transition: transform 0.22s ease, background 0.3s ease, box-shadow 0.22s ease, color 0.22s ease;
+  }
+
+  .fab-fs {
+    top: calc(16px + env(safe-area-inset-top, 0px));
+    right: calc(16px + env(safe-area-inset-right, 0px));
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 40px;
+    padding: 0 15px 0 13px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .fab-sound {
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    right: calc(16px + env(safe-area-inset-right, 0px));
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .fab-fs:hover, .fab-sound:hover  { transform: translateY(-1px); box-shadow: 0 9px 26px rgba(0, 0, 0, 0.18); }
+  .fab-fs:active, .fab-sound:active { transform: scale(0.95); }
+  .fab-fs svg, .fab-sound svg { width: 15px; height: 15px; display: block; flex-shrink: 0; }
+  .fab-fs.is-full { color: #6a6a80; }
+  .fab-sound.muted { color: #b6b6c6; }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    margin: auto;
+    width: 100%;
+    max-width: 540px;
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 26px;
+    padding: 28px 24px 22px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.14);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: #2b2b2b;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+
+  .mode-switch { display: flex; gap: 10px; margin-bottom: 16px; }
+
+  .mode-btn {
+    flex: 1;
+    padding: 11px 0;
+    border: 2px solid #e6e6e6;
+    border-radius: 14px;
+    background: #fafafa;
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #999;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  #btnTruth.active {
+    border-color: var(--c-truth);
+    background: var(--c-truth);
+    color: #fff;
+    box-shadow: 0 6px 18px -6px var(--c-truth);
+  }
+
+  #btnDare.active {
+    border-color: var(--c-dare);
+    background: var(--c-dare);
+    color: #fff;
+    box-shadow: 0 6px 18px -6px var(--c-dare);
+  }
+
+  .mode-btn:disabled { cursor: not-allowed; opacity: 0.55; }
+
+  .filters {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    background: #f8f8fc;
+    border-radius: 14px;
+  }
+
+  .filter-row { display: flex; align-items: center; gap: 8px; }
+  .filter-row + .filter-row { margin-top: 8px; }
+
+  .filter-label {
+    flex-shrink: 0;
+    width: 30px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #9a9aad;
+    letter-spacing: 1px;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
+
+  .chip {
+    padding: 4px 9px;
+    border: 1.5px solid #e2e2ea;
+    border-radius: 20px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    color: #a5a5b5;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .chip:hover { border-color: #cfcfe0; }
+
+  .chip .dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .chip[data-p="1"] .dot { background: var(--c-priv-1); }
+  .chip[data-p="2"] .dot { background: var(--c-priv-2); }
+  .chip[data-p="3"] .dot { background: var(--c-priv-3); }
+  .chip[data-p="4"] .dot { background: var(--c-priv-4); }
+
+  .chip[data-d="1"].active {
+    border-color: var(--c-diff-1); background: var(--c-diff-1); color: #fff;
+    box-shadow: 0 4px 12px -4px var(--c-diff-1);
+  }
+  .chip[data-d="2"].active {
+    border-color: var(--c-diff-2); background: var(--c-diff-2); color: #fff;
+    box-shadow: 0 4px 12px -4px var(--c-diff-2);
+  }
+  .chip[data-d="3"].active {
+    border-color: var(--c-diff-3); background: var(--c-diff-3); color: #fff;
+    box-shadow: 0 4px 12px -4px var(--c-diff-3);
+  }
+
+  .chip[data-p="1"].active {
+    border-color: var(--c-priv-1); background: var(--c-priv-1); color: #fff;
+    box-shadow: 0 4px 12px -4px var(--c-priv-1);
+  }
+  .chip[data-p="2"].active {
+    border-color: var(--c-priv-2); background: var(--c-priv-2); color: #fff;
+    box-shadow: 0 4px 12px -4px var(--c-priv-2);
+  }
+  .chip[data-p="3"].active {
+    border-color: var(--c-priv-3); background: var(--c-priv-3); color: #fff;
+    box-shadow: 0 4px 12px -4px var(--c-priv-3);
+  }
+  .chip[data-p="4"].active {
+    border-color: var(--c-priv-4); background: var(--c-priv-4); color: #fff;
+    box-shadow: 0 4px 12px -4px var(--c-priv-4);
+  }
+
+  .chip.active .dot { background: #fff !important; }
+
+  .card-area {
+    position: relative;
+    min-height: 208px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    padding: 40px 22px 24px;
+    margin-bottom: 18px;
+    background: var(--theme-soft);
+    transition: background 0.9s ease;
+    overflow: hidden;
+  }
+
+  .card-area.clickable { cursor: pointer; }
+
+  .card-label {
+    position: absolute;
+    top: 13px; left: 14px;
+    padding: 3px 11px;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    color: #fff;
+    background: var(--c-truth);
+    transition: background 0.3s ease;
+    z-index: 2;
+  }
+
+  .card-area[data-mode="dare"] .card-label { background: var(--c-dare); }
+
+  .card-stage {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .card-text {
+    font-size: 17px;
+    line-height: 1.75;
+    font-weight: 500;
+    color: #2b2b2b;
+    text-align: center;
+    word-break: break-word;
+  }
+
+  .card-text.placeholder { color: #b6b6c4; font-weight: 400; }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .tag-diff.d-1 { background: #e6f7ef; color: #065f46; }
+  .tag-diff.d-2 { background: #e5efff; color: #1e40af; }
+  .tag-diff.d-3 { background: #f0e9ff; color: #5b21b6; }
+
+  .tag-priv .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .tag-priv.priv-1 { background: #e0f4f8; color: #075c74; }
+  .tag-priv.priv-1 .dot { background: var(--c-priv-1); }
+  .tag-priv.priv-2 { background: #fdf2d9; color: #92400e; }
+  .tag-priv.priv-2 .dot { background: var(--c-priv-2); }
+  .tag-priv.priv-3 { background: #ffe7d6; color: #9a3412; }
+  .tag-priv.priv-3 .dot { background: var(--c-priv-3); }
+  .tag-priv.priv-4 { background: #fde0e0; color: #991b1b; }
+  .tag-priv.priv-4 .dot { background: var(--c-priv-4); }
+
+  .card-main.reveal { animation: popIn 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+  @keyframes popIn {
+    0%   { opacity: 0; transform: scale(0.88) translateY(8px); }
+    100% { opacity: 1; transform: scale(1)    translateY(0); }
+  }
+
+  .loader { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 3px solid rgba(0, 0, 0, 0.06);
+    border-top-color: var(--theme-color);
+    animation: spin 0.75s linear infinite;
+    transition: border-top-color 0.5s ease;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loader-text {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--theme-color);
+    transition: color 0.5s ease;
+  }
+
+  .loader-text .dot { display: inline-block; animation: blink 1.2s infinite; }
+  .loader-text .dot:nth-child(1) { animation-delay: 0s; }
+  .loader-text .dot:nth-child(2) { animation-delay: 0.15s; }
+  .loader-text .dot:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes blink {
+    0%, 70%, 100% { opacity: 0.15; transform: translateY(0); }
+    35%           { opacity: 1;    transform: translateY(-2px); }
+  }
+
+  .loader-track {
+    width: 100%; max-width: 230px; height: 5px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+  }
+
+  .loader-fill {
+    width: 0; height: 100%;
+    border-radius: 3px;
+    background: var(--theme-color);
+    transition: background 0.5s ease;
+  }
+
+  .draw-btn {
+    width: 100%;
+    padding: 15px 0;
+    border: none;
+    border-radius: 16px;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: #fff;
+    background: var(--c-truth);
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+    box-shadow: 0 10px 26px -10px var(--c-truth);
+  }
+
+  .draw-btn[data-mode="dare"] {
+    background: var(--c-dare);
+    box-shadow: 0 10px 26px -10px var(--c-dare);
+  }
+
+  .draw-btn:hover:not(:disabled)  { transform: translateY(-2px); }
+  .draw-btn:active:not(:disabled) { transform: scale(0.98); }
+  .draw-btn:disabled { cursor: not-allowed; opacity: 0.45; box-shadow: none; }
+
+  .count {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 11.5px;
+    color: #b0b0bd;
+    letter-spacing: 0.5px;
+  }
+
+  .empty-hint {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #dc2626;
+  }
+
+  /* ===== 抽取记录 ===== */
+  .history-section {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: #fafafc;
+    border: 1px solid #eef0f6;
+    border-radius: 14px;
+  }
+
+  .history-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .history-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: #5a5a6e;
+    letter-spacing: 0.5px;
+  }
+
+  .history-count {
+    flex: 1;
+    font-size: 11px;
+    font-weight: 600;
+    color: #b0b0c0;
+  }
+
+  .history-clear {
+    border: 1.5px solid #e6e6f0;
+    background: #fff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    color: #8a8a9d;
+    cursor: pointer;
+    padding: 3px 10px;
+    border-radius: 9px;
+    transition: all 0.2s ease;
+  }
+
+  .history-clear:hover {
+    border-color: #d0d0e0;
+    color: #6a6a80;
+  }
+
+  .history-clear.confirming {
+    border-color: #dc2626;
+    background: #fdeaea;
+    color: #dc2626;
+  }
+
+  .history-clear:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .history-list {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 4px;
+  }
+
+  .history-list::-webkit-scrollbar { width: 6px; }
+  .history-list::-webkit-scrollbar-track { background: transparent; }
+  .history-list::-webkit-scrollbar-thumb { background: #d8d8e0; border-radius: 3px; }
+  .history-list::-webkit-scrollbar-thumb:hover { background: #c0c0cc; }
+
+  .history-empty {
+    font-size: 12px;
+    color: #b8b8c8;
+    line-height: 1.6;
+    text-align: center;
+    padding: 14px 0;
+  }
+
+  .history-item {
+    padding: 8px 10px;
+    background: #fff;
+    border-left: 3px solid #ccc;
+    border-radius: 8px;
+    animation: histIn 0.3s ease both;
+  }
+
+  @keyframes histIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .history-item.h-truth { border-left-color: var(--c-truth); }
+  .history-item.h-dare  { border-left-color: var(--c-dare); }
+
+  .history-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 10.5px;
+    color: #a0a0b0;
+    font-weight: 600;
+  }
+
+  .history-meta .hm-mode { font-size: 11px; }
+
+  .history-meta .hm-diff { color: #8a8a9d; letter-spacing: 0.5px; }
+
+  .history-meta .hm-priv {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .history-meta .hm-priv.priv-1 { background: var(--c-priv-1); }
+  .history-meta .hm-priv.priv-2 { background: var(--c-priv-2); }
+  .history-meta .hm-priv.priv-3 { background: var(--c-priv-3); }
+  .history-meta .hm-priv.priv-4 { background: var(--c-priv-4); }
+
+  .history-meta .hm-time {
+    margin-left: auto;
+    font-size: 10px;
+    color: #c0c0cc;
+    font-weight: 500;
+  }
+
+  .history-text {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #4a4a5c;
+    word-break: break-word;
+  }
+
+  /* ===== 免责声明 ===== */
+  .disclaimer {
+    margin-top: 14px;
+    padding: 14px 15px;
+    background: #fafafc;
+    border: 1px solid #eef0f6;
+    border-radius: 14px;
+    color: #8a8a9a;
+    font-size: 11.5px;
+    line-height: 1.75;
+    letter-spacing: 0.2px;
+  }
+
+  .disclaimer + .disclaimer { margin-top: 10px; }
+
+  .disclaimer .d-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #5a5a6e;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .disclaimer .d-title::before {
+    content: "";
+    display: inline-block;
+    width: 3px; height: 13px;
+    border-radius: 2px;
+    background: var(--theme-color);
+    transition: background 0.5s ease;
+  }
+
+  .disclaimer p { margin-bottom: 4px; }
+  .disclaimer p:last-child { margin-bottom: 0; }
+
+  .disclaimer .d-em { color: #6a6a7e; font-weight: 700; }
+
+  html:fullscreen body,
+  html:-webkit-full-screen body,
+  html:-moz-full-screen body,
+  html:-ms-fullscreen body { padding: 26px; }
+
+  html:fullscreen .app,
+  html:-webkit-full-screen .app,
+  html:-moz-full-screen .app,
+  html:-ms-fullscreen .app { box-shadow: 0 32px 96px rgba(0, 0, 0, 0.28); }
+
+  @media (max-width: 420px) {
+    .app { padding: 22px 16px 18px; border-radius: 22px; }
+    h1 { font-size: 18px; margin-bottom: 16px; }
+    .card-text { font-size: 15.5px; }
+    .card-area { min-height: 190px; padding: 38px 16px 22px; }
+    .chip { font-size: 10.5px; padding: 4px 7px; }
+    .filter-label { width: 26px; font-size: 10px; }
+    .tag { font-size: 10px; padding: 3px 8px; }
+    .disclaimer { font-size: 11px; padding: 12px 13px; }
+    .history-list { max-height: 170px; }
+    .history-text { font-size: 12px; }
+
+    .fab-fs {
+      top: calc(12px + env(safe-area-inset-top, 0px));
+      right: calc(12px + env(safe-area-inset-right, 0px));
+      width: 40px; height: 40px;
+      padding: 0;
+      justify-content: center;
+    }
+    .fab-fs .fab-text { display: none; }
+    .fab-sound {
+      top: calc(60px + env(safe-area-inset-top, 0px));
+      right: calc(12px + env(safe-area-inset-right, 0px));
+    }
+  }
+</style>
+</head>
+<body>
+
+<button class="fab-fs" id="fsBtn" type="button" aria-label="切换全屏">
+  <svg id="fsIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="4 9 4 4 9 4"></polyline>
+    <polyline points="15 4 20 4 20 9"></polyline>
+    <polyline points="20 15 20 20 15 20"></polyline>
+    <polyline points="9 20 4 20 4 15"></polyline>
+  </svg>
+  <span class="fab-text" id="fsText">沉浸全屏</span>
+</button>
+
+<button class="fab-sound" id="soundBtn" type="button" aria-label="切换音效">
+  <svg id="soundIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+  </svg>
+</button>
+
+<div class="app">
+  <h1>🎲 真心话 · 大冒险</h1>
+
+  <div class="mode-switch">
+    <button class="mode-btn active" id="btnTruth">💬 真心话</button>
+    <button class="mode-btn" id="btnDare">🔥 大冒险</button>
+  </div>
+
+  <div class="filters">
+    <div class="filter-row">
+      <span class="filter-label">难度</span>
+      <div class="chips" id="diffChips">
+        <button class="chip active" data-d="1" title="轻松：几乎无压力">⭐ 轻松</button>
+        <button class="chip active" data-d="2" title="进阶：需要一点勇气">⭐⭐ 进阶</button>
+        <button class="chip active" data-d="3" title="硬核：挑战性较强">⭐⭐⭐ 硬核</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">私密</span>
+      <div class="chips" id="privChips">
+        <button class="chip active" data-p="1" title="公开：任何场合都能玩"><i class="dot"></i>公开</button>
+        <button class="chip active" data-p="2" title="朋友：熟人聚会"><i class="dot"></i>朋友</button>
+        <button class="chip active" data-p="3" title="私密：关系较好的朋友"><i class="dot"></i>私密</button>
+        <button class="chip active" data-p="4" title="密友：非常亲密的关系"><i class="dot"></i>密友</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-area" id="cardArea" data-mode="truth">
+    <span class="card-label" id="cardLabel">真心话</span>
+    <div class="card-stage" id="cardStage">
+      <p class="card-text placeholder">点击下方按钮抽取题目</p>
+    </div>
+  </div>
+
+  <button class="draw-btn" id="drawBtn" data-mode="truth">抽 一 张</button>
+  <p class="count" id="countText"></p>
+  <p class="empty-hint" id="emptyHint" style="display:none;">当前筛选条件下没有题目，请放宽筛选</p>
+
+  <!-- ===== 抽取记录 ===== -->
+  <div class="history-section">
+    <div class="history-head">
+      <span class="history-title">📋 抽取记录</span>
+      <span class="history-count" id="historyCount"></span>
+      <button class="history-clear" id="historyClear" type="button" disabled>清空记录</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <span class="history-empty">还没有抽取记录<br>每次抽到的题目会自动记在这里</span>
+    </div>
+  </div>
+
+  <!-- ===== 健康游戏忠告 ===== -->
+  <div class="disclaimer">
+    <div class="d-title">📢 健康游戏忠告</div>
+    <p>抵制不良游戏，拒绝盗版游戏。注意自我保护，谨防受骗上当。</p>
+    <p>适度游戏益脑，沉迷游戏伤身。合理安排时间，享受健康生活。</p>
+  </div>
+
+  <!-- ===== 免责声明 ===== -->
+  <div class="disclaimer">
+    <div class="d-title">⚖️ 免责声明</div>
+    <p>本工具为<span class="d-em">非商业性质的娱乐辅助小工具</span>，仅用于方便玩家随机抽取题目。所有条目均为网络常见趣味内容整理，<span class="d-em">仅供参考、娱乐</span>，不代表任何立场、观点或倡导。</p>
+    <p>请在<span class="d-em">遵守所在国家或地区的法律法规及公序良俗</span>的前提下使用本工具。游戏中请尊重每一位参与者的意愿，<span class="d-em">不强迫、不诱导</span>他人进行任何令其不适的行为。</p>
+    <p>使用者应自行判断内容的适宜性，因使用本工具产生的任何后果，均由使用者自行承担。</p>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   等级说明
+   难度 d：1 = 轻松  2 = 进阶  3 = 硬核
+   私密 p：1 = 公开  2 = 朋友  3 = 私密  4 = 密友
+   ========================================================= */
+
+/* =========================================================
+   一、题库 —— 真心话
+   ========================================================= */
+
+const truths = [
+  /* d1 p1 */
+  { t: "你手机里播放次数最多的一首歌是什么？", d: 1, p: 1 },
+  { t: "你最喜欢什么颜色？为什么？", d: 1, p: 1 },
+  { t: "你会做饭吗？最拿手的一道菜是什么？", d: 1, p: 1 },
+  { t: "你早上起床做的第一件事是什么？", d: 1, p: 1 },
+  { t: "你睡前做的最后一件事是什么？", d: 1, p: 1 },
+  { t: "你最喜欢哪个季节？为什么？", d: 1, p: 1 },
+  { t: "你最讨厌哪种天气？", d: 1, p: 1 },
+  { t: "你最喜欢喝什么饮料？", d: 1, p: 1 },
+  { t: "你最讨厌吃什么蔬菜？", d: 1, p: 1 },
+  { t: "你最喜欢的动物是什么？", d: 1, p: 1 },
+  { t: "你最怕什么动物？", d: 1, p: 1 },
+  { t: "你最喜欢的一个节日是什么？", d: 1, p: 1 },
+  { t: "你最喜欢的一部动画片是什么？", d: 1, p: 1 },
+  { t: "你最近在追什么剧？", d: 1, p: 1 },
+  { t: "你最想去的国内城市是哪里？", d: 1, p: 1 },
+  { t: "你最喜欢的水果是什么？", d: 1, p: 1 },
+  { t: "你最讨厌的水果是什么？", d: 1, p: 1 },
+  { t: "你手机铃声是什么？", d: 1, p: 1 },
+  { t: "你最喜欢哪个数字？为什么？", d: 1, p: 1 },
+  { t: "你最常用的一句口头禅是什么？", d: 1, p: 1 },
+  { t: "你手机里最常用的表情是什么？", d: 1, p: 1 },
+  { t: "你最擅长的家务是什么？", d: 1, p: 1 },
+  { t: "你最讨厌的家务是什么？", d: 1, p: 1 },
+  { t: "你会为了什么熬夜？", d: 1, p: 1 },
+  { t: "你最近一次逛街买了什么？", d: 1, p: 1 },
+  { t: "你上学时最喜欢哪门课？", d: 1, p: 1 },
+  { t: "你上学时最讨厌哪门课？", d: 1, p: 1 },
+  { t: "你最擅长的一项运动是什么？", d: 1, p: 1 },
+  { t: "你最不擅长的一项运动是什么？", d: 1, p: 1 },
+  { t: "你最喜欢的一首歌是什么？", d: 1, p: 1 },
+  { t: "你最想学的一门乐器是什么？", d: 1, p: 1 },
+  { t: "你最想学的一门外语是什么？", d: 1, p: 1 },
+  { t: "你最喜欢的一个零食是什么？", d: 1, p: 1 },
+  { t: "你最喜欢的一个甜品是什么？", d: 1, p: 1 },
+  { t: "你最常用的一个 App 是什么？", d: 1, p: 1 },
+  { t: "你最常点的外卖是什么？", d: 1, p: 1 },
+  { t: "你最喜欢的一个汉字是什么？", d: 1, p: 1 },
+  { t: "你最喜欢闻什么味道？", d: 1, p: 1 },
+
+  /* d1 p2 */
+  { t: "你最想和在场谁做一辈子的朋友？", d: 1, p: 2 },
+  { t: "你觉得在场谁最了解你？", d: 1, p: 2 },
+  { t: "你觉得在场谁最靠谱？", d: 1, p: 2 },
+  { t: "你觉得在场谁最会安慰人？", d: 1, p: 2 },
+  { t: "你觉得在场谁最幽默？", d: 1, p: 2 },
+  { t: "你觉得在场谁变化最大？", d: 1, p: 2 },
+  { t: "你觉得在场谁最有可能先结婚？", d: 1, p: 2 },
+  { t: "你觉得在场谁最有可能一夜暴富？", d: 1, p: 2 },
+  { t: "你最想和在场谁交换一天的生活？", d: 1, p: 2 },
+  { t: "如果只能带在场一个人去孤岛，你选谁？", d: 1, p: 2 },
+  { t: "你给在场的人取过什么外号？", d: 1, p: 2 },
+  { t: "你觉得在场谁最闷骚？", d: 1, p: 2 },
+  { t: "你觉得在场谁最适合当老师？", d: 1, p: 2 },
+  { t: "你觉得在场谁最适合当医生？", d: 1, p: 2 },
+  { t: "你觉得在场谁最适合当艺术家？", d: 1, p: 2 },
+  { t: "你觉得在场谁最有可能去环游世界？", d: 1, p: 2 },
+  { t: "你觉得在场谁最有可能写出一本书？", d: 1, p: 2 },
+  { t: "你觉得在场谁最有可能上电视？", d: 1, p: 2 },
+  { t: "你觉得在场谁笑起来最好看？", d: 1, p: 2 },
+  { t: "你觉得在场谁的声音最好听？", d: 1, p: 2 },
+  { t: "你觉得在场谁最有领导力？", d: 1, p: 2 },
+  { t: "你觉得在场谁最会做饭？", d: 1, p: 2 },
+  { t: "你觉得在场谁最会打扮？", d: 1, p: 2 },
+  { t: "你觉得在场谁最会拍照？", d: 1, p: 2 },
+  { t: "你最想跟在场谁一起去旅行？", d: 1, p: 2 },
+  { t: "你最想跟在场谁一起看电影？", d: 1, p: 2 },
+  { t: "你最想跟在场谁一起打游戏？", d: 1, p: 2 },
+  { t: "你最想和在场谁一起做的事是什么？", d: 1, p: 2 },
+  { t: "你觉得在场谁最有可能养宠物？", d: 1, p: 2 },
+  { t: "你觉得在场谁最值得信任？", d: 1, p: 2 },
+  { t: "你觉得在场谁最有可能会帮你？", d: 1, p: 2 },
+  { t: "你觉得在场谁最适合做老板？", d: 1, p: 2 },
+
+  /* d1 p3 */
+  { t: "你有没有一个从未告诉别人的小习惯？", d: 1, p: 3 },
+  { t: "你偷偷哭过的一次是什么时候？", d: 1, p: 3 },
+  { t: "你有没有过「假装很忙」来推掉邀约？", d: 1, p: 3 },
+  { t: "你有没有对某个朋友说过善意的谎言？", d: 1, p: 3 },
+  { t: "你最近一次删朋友圈是什么时候？为什么？", d: 1, p: 3 },
+  { t: "你有没有过嫉妒某个人的时候？", d: 1, p: 3 },
+  { t: "你手机里有没有一个隐藏文件夹？", d: 1, p: 3 },
+  { t: "你有没有偷偷吃独食的经历？", d: 1, p: 3 },
+  { t: "你有没有偷偷模仿过别人的说话方式？", d: 1, p: 3 },
+  { t: "你有没有假装喜欢过一份礼物？", d: 1, p: 3 },
+  { t: "你有没有过明明很开心却假装淡定的时刻？", d: 1, p: 3 },
+  { t: "你最近一次觉得尴尬是什么时候？", d: 1, p: 3 },
+  { t: "你有没有过想偷偷掉眼泪但忍住的时候？", d: 1, p: 3 },
+  { t: "你有没有偷偷比较过自己和别人？", d: 1, p: 3 },
+  { t: "你有没有假装听懂了但其实没听懂？", d: 1, p: 3 },
+  { t: "你有没有过明明不想去但还是答应了的经历？", d: 1, p: 3 },
+  { t: "你有没有偷偷关注过暗恋的人？", d: 1, p: 3 },
+  { t: "你有没有假装自己不在意但其实很在意？", d: 1, p: 3 },
+  { t: "你有没有为了合群而改变过自己？", d: 1, p: 3 },
+  { t: "你有没有偷偷记过别人的生日？", d: 1, p: 3 },
+  { t: "你有没有过想删掉某段回忆的时候？", d: 1, p: 3 },
+  { t: "你有没有偷偷给自己点过赞？", d: 1, p: 3 },
+  { t: "你有没有过想对一个人道歉但没开口？", d: 1, p: 3 },
+  { t: "你有没有过后悔发出去的消息？", d: 1, p: 3 },
+  { t: "你有没有偷偷准备过惊喜？", d: 1, p: 3 },
+  { t: "你有没有过假装不认识某个人的时候？", d: 1, p: 3 },
+  { t: "你有没有过想扔掉某件东西但舍不得？", d: 1, p: 3 },
+  { t: "你有没有偷偷收藏过某人的照片？", d: 1, p: 3 },
+  { t: "你有没有过偷偷在意别人评价的时候？", d: 1, p: 3 },
+  { t: "你有没有过偷偷羡慕过别人的生活？", d: 1, p: 3 },
+  { t: "你有没有过偷偷希望时间停住的时刻？", d: 1, p: 3 },
+  { t: "你有没有过偷偷想给某个人打电话？", d: 1, p: 3 },
+
+  /* d1 p4 */
+  { t: "你暗恋过身边的人吗？", d: 1, p: 4 },
+  { t: "你有没有过为一个人偷偷改变自己的时刻？", d: 1, p: 4 },
+  { t: "你有没有过因为一个人而哭过？", d: 1, p: 4 },
+  { t: "你最近一次心动是什么时候？", d: 1, p: 4 },
+  { t: "你有没有过偷偷幻想过和某人的未来？", d: 1, p: 4 },
+  { t: "你有没有过为了一个人放弃过什么？", d: 1, p: 4 },
+  { t: "你最想对曾经喜欢过的人说什么？", d: 1, p: 4 },
+  { t: "你有没有过「如果当初」的遗憾？", d: 1, p: 4 },
+  { t: "你有没有过为一段关系感到骄傲的时候？", d: 1, p: 4 },
+  { t: "你有没有过想要重新联系某个人的冲动？", d: 1, p: 4 },
+  { t: "你有没有过偷偷保存过某人的照片？", d: 1, p: 4 },
+  { t: "你有没有过因为一句话记很久的经历？", d: 1, p: 4 },
+  { t: "你有没有过为一段友谊感动到哭？", d: 1, p: 4 },
+  { t: "你有没有过为一个人准备很久的惊喜？", d: 1, p: 4 },
+  { t: "你有没有过想对父母说但一直没说的话？", d: 1, p: 4 },
+  { t: "你有没有过因为家里的某件事而偷偷哭？", d: 1, p: 4 },
+  { t: "你最近一次觉得被理解是什么时候？", d: 1, p: 4 },
+  { t: "你有没有过心里很难受但表面若无其事？", d: 1, p: 4 },
+  { t: "你有没有过想要一个人静静但被打扰？", d: 1, p: 4 },
+  { t: "你有没有过因为一首歌想起一个人？", d: 1, p: 4 },
+  { t: "你有没有过偷偷为自己骄傲的时刻？", d: 1, p: 4 },
+  { t: "你有没有过觉得自己不够好的时候？", d: 1, p: 4 },
+  { t: "你有没有过想被抱抱的时候？", d: 1, p: 4 },
+  { t: "你有没有过觉得自己被误解的时刻？", d: 1, p: 4 },
+  { t: "你有没有过「原来我也可以」的瞬间？", d: 1, p: 4 },
+  { t: "你有没有过想要勇敢一次的时刻？", d: 1, p: 4 },
+  { t: "你最想对十年前的自己说什么？", d: 1, p: 4 },
+  { t: "你最想对未来的自己说什么？", d: 1, p: 4 },
+  { t: "你有没有过「这辈子最想做的一件事」？", d: 1, p: 4 },
+  { t: "你有没有过想要被理解却说不出口的时候？", d: 1, p: 4 },
+  { t: "你有没有过对一个人偷偷心软的时刻？", d: 1, p: 4 },
+  { t: "你有没有过突然很想念某人的经历？", d: 1, p: 4 },
+
+  /* d2 p1 */
+  { t: "你做过最傻的一件事是什么？", d: 2, p: 1 },
+  { t: "你去过最奇怪的上厕所地点是哪里？", d: 2, p: 1 },
+  { t: "你最近一次撒谎是为了什么？", d: 2, p: 1 },
+  { t: "你手机相册最新一张照片是什么？", d: 2, p: 1 },
+  { t: "你买东西最后悔的一次是什么？", d: 2, p: 1 },
+  { t: "你有没有过在大庭广众之下摔跤的经历？", d: 2, p: 1 },
+  { t: "你最近一次被人误会是什么时候？", d: 2, p: 1 },
+  { t: "你有没有过被老师点名的尴尬瞬间？", d: 2, p: 1 },
+  { t: "你有没有过认错人的经历？", d: 2, p: 1 },
+  { t: "你最近一次被表扬是什么？", d: 2, p: 1 },
+  { t: "你最长一次熬夜是多久？在做什么？", d: 2, p: 1 },
+  { t: "你有没有过在公共场合说错话？", d: 2, p: 1 },
+  { t: "你有没有过叫错别人名字的经历？", d: 2, p: 1 },
+  { t: "你有没有过穿着拖鞋出门的经历？", d: 2, p: 1 },
+  { t: "你最近一次手机没电是在什么时候？", d: 2, p: 1 },
+  { t: "你有没有过在地铁上睡过站的经历？", d: 2, p: 1 },
+  { t: "你有没有过忘带钥匙被锁在门外？", d: 2, p: 1 },
+  { t: "你有没有过忘带钱包或手机的经历？", d: 2, p: 1 },
+  { t: "你最近一次出门忘带的东西是什么？", d: 2, p: 1 },
+  { t: "你有没有过在餐厅点错菜的经历？", d: 2, p: 1 },
+  { t: "你有没有过发消息发错人的经历？", d: 2, p: 1 },
+  { t: "你有没有过走路撞到玻璃的经历？", d: 2, p: 1 },
+  { t: "你有没有过说梦话的经历？", d: 2, p: 1 },
+  { t: "你有没有过打呼噜的经历？", d: 2, p: 1 },
+  { t: "你有没有过在梦中笑出声的经历？", d: 2, p: 1 },
+  { t: "你有没有过睡着从床上掉下来的经历？", d: 2, p: 1 },
+  { t: "你有没有过在重要场合迟到的经历？", d: 2, p: 1 },
+  { t: "你有没有过上台发言忘词？", d: 2, p: 1 },
+  { t: "你有没有过手机掉进水里或马桶里？", d: 2, p: 1 },
+  { t: "你有没有过坐错车或坐反方向的经历？", d: 2, p: 1 },
+  { t: "你有没有过被自己吓一跳的经历？", d: 2, p: 1 },
+  { t: "你有没有过在超市拿错购物车的经历？", d: 2, p: 1 },
+
+  /* d2 p2 */
+  { t: "你曾经在朋友背后说过什么话？", d: 2, p: 2 },
+  { t: "你做过最丢脸的一件事是什么？", d: 2, p: 2 },
+  { t: "你最近一次哭是什么时候？因为什么？", d: 2, p: 2 },
+  { t: "你最后一次说谎是什么时候？说了什么？", d: 2, p: 2 },
+  { t: "你曾经嫉妒过在场的人吗？嫉妒什么？", d: 2, p: 2 },
+  { t: "你有没有瞒着朋友做过什么事？", d: 2, p: 2 },
+  { t: "你曾经对在场的人撒过什么谎？", d: 2, p: 2 },
+  { t: "你有没有过因为朋友的一句话难过很久？", d: 2, p: 2 },
+  { t: "你有没有过和好朋友吵架后偷偷哭过？", d: 2, p: 2 },
+  { t: "你有没有过和好朋友绝交又和好？", d: 2, p: 2 },
+  { t: "你有没有过偷偷比较自己和朋友？", d: 2, p: 2 },
+  { t: "你有没有过因为朋友变得更好的经历？", d: 2, p: 2 },
+  { t: "你最近一次和朋友闹别扭是什么时候？", d: 2, p: 2 },
+  { t: "你有没有过被朋友误解的经历？", d: 2, p: 2 },
+  { t: "你有没有过想对朋友道歉但没开口？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起做过疯狂的傻事？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起熬夜到天亮？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起哭过？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起笑到肚子疼？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起出远门旅行？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起住过？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起做项目？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起参加比赛？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起搬家？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起减肥？", d: 2, p: 2 },
+  { t: "你有没有过和朋友一起学新东西？", d: 2, p: 2 },
+  { t: "你最想和哪个朋友再做一件什么事？", d: 2, p: 2 },
+  { t: "你觉得在场谁最有可能成为你的合伙人？", d: 2, p: 2 },
+  { t: "你有没有过和朋友因为钱闹过不愉快？", d: 2, p: 2 },
+  { t: "你有没有过发现朋友偷偷帮过你？", d: 2, p: 2 },
+  { t: "你有没有过和朋友喜欢上同一个人？", d: 2, p: 2 },
+  { t: "你最想对在场哪位朋友说一句谢谢？", d: 2, p: 2 },
+
+  /* d2 p3 */
+  { t: "你偷偷关注过前任的社交账号吗？", d: 2, p: 3 },
+  { t: "你手机里最舍不得删的一张截图是什么？", d: 2, p: 3 },
+  { t: "你发朋友圈会屏蔽谁？", d: 2, p: 3 },
+  { t: "你上次哭是因为什么？", d: 2, p: 3 },
+  { t: "你现在有喜欢的人吗？", d: 2, p: 3 },
+  { t: "你在意另一半的过去吗？", d: 2, p: 3 },
+  { t: "你最长的一段恋爱持续了多久？", d: 2, p: 3 },
+  { t: "你为爱情做过最疯狂的事是什么？", d: 2, p: 3 },
+  { t: "你表白过几次？成功几次？", d: 2, p: 3 },
+  { t: "你有没有过暗恋很久却没说出口？", d: 2, p: 3 },
+  { t: "你有没有过因为暗恋的人而努力学习？", d: 2, p: 3 },
+  { t: "你有没有过「喜欢一个人但不敢靠近」？", d: 2, p: 3 },
+  { t: "你有没有过因为喜欢的人改变自己的穿着？", d: 2, p: 3 },
+  { t: "你有没有过为暗恋的人做过傻事？", d: 2, p: 3 },
+  { t: "你有没有过偷偷记录关于喜欢的人的细节？", d: 2, p: 3 },
+  { t: "你有没有过因为对方一句话高兴很久？", d: 2, p: 3 },
+  { t: "你有没有过因为对方没回消息而失落？", d: 2, p: 3 },
+  { t: "你有没有过「原来他/她也喜欢我」的惊喜？", d: 2, p: 3 },
+  { t: "你有没有过单方面付出的感情？", d: 2, p: 3 },
+  { t: "你有没有过被拒绝的经历？", d: 2, p: 3 },
+  { t: "你有没有过主动告白失败的经历？", d: 2, p: 3 },
+  { t: "你有没有过因为一段感情改变了自己？", d: 2, p: 3 },
+  { t: "你有没有过和喜欢的人一起看星星？", d: 2, p: 3 },
+  { t: "你有没有过和喜欢的人一起看日出？", d: 2, p: 3 },
+  { t: "你有没有过因为一段感情写过什么？", d: 2, p: 3 },
+  { t: "你有没有过和喜欢的人分享过秘密？", d: 2, p: 3 },
+  { t: "你有没有过和喜欢的人一起许过愿？", d: 2, p: 3 },
+  { t: "你有没有过「如果当时我勇敢一点」的遗憾？", d: 2, p: 3 },
+  { t: "你有没有过为一个人写过一封没送出的信？", d: 2, p: 3 },
+  { t: "你有没有过偷偷看过对方的社交主页很多次？", d: 2, p: 3 },
+  { t: "你有没有过默默祝福过一个不在身边的人？", d: 2, p: 3 },
+  { t: "你有没有过心里住着一个人但生活继续？", d: 2, p: 3 },
+
+  /* d2 p4 */
+  { t: "你最后悔亲过的人是谁？", d: 2, p: 4 },
+  { t: "你被劈腿过，或者劈腿过别人吗？", d: 2, p: 4 },
+  { t: "你曾经迷恋过朋友的另一半吗？", d: 2, p: 4 },
+  { t: "你的初吻是几岁？在什么地方？被谁夺去的？", d: 2, p: 4 },
+  { t: "你暗恋过在场的人吗？", d: 2, p: 4 },
+  { t: "你上一段感情是怎么结束的？", d: 2, p: 4 },
+  { t: "你曾经同时喜欢过两个人吗？", d: 2, p: 4 },
+  { t: "你有没有过为一个人流过最多的泪？", d: 2, p: 4 },
+  { t: "你有没有过为一个人做过最疯狂的事？", d: 2, p: 4 },
+  { t: "你有没有过「爱而不得」的经历？", d: 2, p: 4 },
+  { t: "你有没有过半夜为一个人哭到睡不着？", d: 2, p: 4 },
+  { t: "你有没有过因为一个人删掉了所有联系？", d: 2, p: 4 },
+  { t: "你有没有过为了一段感情放弃自己的梦想？", d: 2, p: 4 },
+  { t: "你有没有过被一个人彻底改变？", d: 2, p: 4 },
+  { t: "你有没有过对一个人失望透顶的时刻？", d: 2, p: 4 },
+  { t: "你有没有过「这辈子最爱的人」？", d: 2, p: 4 },
+  { t: "你有没有过和一个人分手后一直放不下？", d: 2, p: 4 },
+  { t: "你有没有过因为一段感情怀疑自己？", d: 2, p: 4 },
+  { t: "你有没有过「原来他/她一直知道」的瞬间？", d: 2, p: 4 },
+  { t: "你有没有过被一个人深深伤害过？", d: 2, p: 4 },
+  { t: "你有没有过辜负过一个人的真心？", d: 2, p: 4 },
+  { t: "你有没有过「如果重来一次」的幻想？", d: 2, p: 4 },
+  { t: "你有没有过为一个人准备很久的惊喜却没送出？", d: 2, p: 4 },
+  { t: "你有没有过「我值得被爱」的时刻？", d: 2, p: 4 },
+  { t: "你有没有过「我曾经真的爱过」的感觉？", d: 2, p: 4 },
+  { t: "你有没有过对一个人的愧疚一直放不下？", d: 2, p: 4 },
+  { t: "你有没有过想给某个人写一封长信？", d: 2, p: 4 },
+  { t: "你有没有过「我们再也回不去」的遗憾？", d: 2, p: 4 },
+  { t: "你最想对曾经爱过的人说什么？", d: 2, p: 4 },
+  { t: "你有没有过「我原谅你了」的时刻？", d: 2, p: 4 },
+  { t: "你有没有过想对某个人说「谢谢你」但没机会？", d: 2, p: 4 },
+  { t: "你有没有过偷偷在心里告别过某个人？", d: 2, p: 4 },
+
+  /* d3 p1 */
+  { t: "你曾经偷看过别人的手机吗？", d: 3, p: 1 },
+  { t: "你有没有恨过一个人？", d: 3, p: 1 },
+  { t: "你做过最违背自己原则的事是什么？", d: 3, p: 1 },
+  { t: "你有没有做过让自己后悔一辈子的决定？", d: 3, p: 1 },
+  { t: "你最不能原谅自己的一件事是什么？", d: 3, p: 1 },
+  { t: "你有没有过做过一件让自己良心不安的事？", d: 3, p: 1 },
+  { t: "你有没有过对父母说过很重的话？", d: 3, p: 1 },
+  { t: "你有没有过因为一时冲动做了后悔的事？", d: 3, p: 1 },
+  { t: "你有没有过在背后议论过别人？", d: 3, p: 1 },
+  { t: "你有没有过违背过自己的承诺？", d: 3, p: 1 },
+  { t: "你有没有过对老师撒过很大的谎？", d: 3, p: 1 },
+  { t: "你有没有过因为害怕而逃避责任？", d: 3, p: 1 },
+  { t: "你有没有过因为面子而做了违心的事？", d: 3, p: 1 },
+  { t: "你有没有过因为嫉妒而伤害过别人？", d: 3, p: 1 },
+  { t: "你有没有过因为愤怒而说了伤人的话？", d: 3, p: 1 },
+  { t: "你有没有过因为自私而忽略别人的感受？", d: 3, p: 1 },
+  { t: "你有没有过因为懦弱而错过了什么？", d: 3, p: 1 },
+  { t: "你有没有过因为懒惰而失去了什么？", d: 3, p: 1 },
+  { t: "你有没有过因为贪心而后悔？", d: 3, p: 1 },
+  { t: "你有没有过因为虚荣而做了傻事？", d: 3, p: 1 },
+  { t: "你有没有过因为冲动而删掉了什么？", d: 3, p: 1 },
+  { t: "你有没有过因为情绪而做了错误的决定？", d: 3, p: 1 },
+  { t: "你有没有过因为害怕失去而撒谎？", d: 3, p: 1 },
+  { t: "你有没有过因为不甘心而纠缠？", d: 3, p: 1 },
+  { t: "你有没有过因为一时心软而后悔？", d: 3, p: 1 },
+  { t: "你有没有过因为一时赌气而后悔？", d: 3, p: 1 },
+  { t: "你有没有过因为面子而错过了道歉？", d: 3, p: 1 },
+  { t: "你有没有过因为自以为是而做错事？", d: 3, p: 1 },
+  { t: "你有没有过因为倔强而失去一段关系？", d: 3, p: 1 },
+  { t: "你有没有过因为骄傲而错过了什么？", d: 3, p: 1 },
+  { t: "你有没有过因为犹豫而错过了机会？", d: 3, p: 1 },
+  { t: "你有没有过因为冲动而损失了什么？", d: 3, p: 1 },
+
+  /* d3 p2 */
+  { t: "你在场最不想和谁交换人生？为什么？", d: 3, p: 2 },
+  { t: "如果必须删掉在场一个人的联系方式，你会删谁？", d: 3, p: 2 },
+  { t: "你有没有借过钱给在场的人还没还？", d: 3, p: 2 },
+  { t: "你有没有过因为朋友而做过违心的事？", d: 3, p: 2 },
+  { t: "你有没有过在朋友面前假装很开心？", d: 3, p: 2 },
+  { t: "你有没有过因为朋友的一句话记恨很久？", d: 3, p: 2 },
+  { t: "你有没有过偷偷嫉妒过某个朋友？", d: 3, p: 2 },
+  { t: "你有没有过因为朋友放弃过什么？", d: 3, p: 2 },
+  { t: "你有没有过想和朋友断绝关系？", d: 3, p: 2 },
+  { t: "你有没有过和朋友因为钱而闹翻？", d: 3, p: 2 },
+  { t: "你有没有过和朋友因为感情而闹翻？", d: 3, p: 2 },
+  { t: "你有没有过和朋友因为小事而绝交？", d: 3, p: 2 },
+  { t: "你有没有过发现朋友说了你的坏话？", d: 3, p: 2 },
+  { t: "你有没有过发现朋友背叛了你？", d: 3, p: 2 },
+  { t: "你有没有过在朋友最难时没帮上忙？", d: 3, p: 2 },
+  { t: "你有没有过在朋友需要时选择了沉默？", d: 3, p: 2 },
+  { t: "你有没有过把一个朋友当成敌人？", d: 3, p: 2 },
+  { t: "你有没有过因为一个朋友失去了另一个朋友？", d: 3, p: 2 },
+  { t: "你有没有过对朋友说过很重的话？", d: 3, p: 2 },
+  { t: "你有没有过伤害过一个真心对你的人？", d: 3, p: 2 },
+  { t: "你有没有过被朋友伤害后选择原谅？", d: 3, p: 2 },
+  { t: "你有没有过因为误会疏远了一个朋友？", d: 3, p: 2 },
+  { t: "你有没有过想对某个朋友道歉但一直没说？", d: 3, p: 2 },
+  { t: "你有没有过因为朋友的成功而心里不平衡？", d: 3, p: 2 },
+  { t: "你有没有过「这个朋友是我这辈子的幸运」？", d: 3, p: 2 },
+  { t: "你有没有过和朋友一起经历过难忘的危机？", d: 3, p: 2 },
+  { t: "你有没有过和朋友一起度过最艰难的日子？", d: 3, p: 2 },
+  { t: "你有没有过和朋友一起见证人生重要时刻？", d: 3, p: 2 },
+  { t: "你最想对在场哪位朋友说一句真心话？", d: 3, p: 2 },
+  { t: "你有没有过觉得自己配不上某个朋友？", d: 3, p: 2 },
+  { t: "你有没有过和朋友反目成仇？", d: 3, p: 2 },
+  { t: "你有没有过朋友做了让你难以原谅的事？", d: 3, p: 2 },
+
+  /* d3 p3 */
+  { t: "你对父母隐瞒过最大的秘密是什么？", d: 3, p: 3 },
+  { t: "你有没有恨过一个人？是谁？", d: 3, p: 3 },
+  { t: "你最害怕失去什么？", d: 3, p: 3 },
+  { t: "你觉得自己活着的意义是什么？", d: 3, p: 3 },
+  { t: "你有没有想过逃离现在的生活？", d: 3, p: 3 },
+  { t: "你有没有一个永远无法释怀的人？", d: 3, p: 3 },
+  { t: "你最想改变自己哪一点？", d: 3, p: 3 },
+  { t: "你觉得自己现在快乐吗？", d: 3, p: 3 },
+  { t: "你有没有一个从未告诉别人的梦想？", d: 3, p: 3 },
+  { t: "你有没有过对父母撒过一个很大的谎？", d: 3, p: 3 },
+  { t: "你有没有过对家人隐瞒了一段感情？", d: 3, p: 3 },
+  { t: "你有没有过对家人隐瞒自己的选择？", d: 3, p: 3 },
+  { t: "你有没有过觉得家里人不理解你？", d: 3, p: 3 },
+  { t: "你有没有过想要逃离家庭？", d: 3, p: 3 },
+  { t: "你有没有过对家人说过很重的话？", d: 3, p: 3 },
+  { t: "你有没有过因为家庭放弃自己的梦想？", d: 3, p: 3 },
+  { t: "你有没有过因为家庭改变了自己？", d: 3, p: 3 },
+  { t: "你有没有过和父母有过很大的争吵？", d: 3, p: 3 },
+  { t: "你有没有过觉得父母偏心？", d: 3, p: 3 },
+  { t: "你有没有过觉得父母不理解你的感受？", d: 3, p: 3 },
+  { t: "你有没有过因为家庭而偷偷哭过？", d: 3, p: 3 },
+  { t: "你有没有过觉得自己不是父母最爱的孩子？", d: 3, p: 3 },
+  { t: "你有没有过想对父母说但一直没说？", d: 3, p: 3 },
+  { t: "你有没有过为父母做过让自己骄傲的事？", d: 3, p: 3 },
+  { t: "你有没有过发现父母老了的那一刻？", d: 3, p: 3 },
+  { t: "你有没有过想要保护家人的冲动？", d: 3, p: 3 },
+  { t: "你有没有过因为家人而勇敢过一次？", d: 3, p: 3 },
+  { t: "你有没有过和家人一起度过最艰难的时刻？", d: 3, p: 3 },
+  { t: "你有没有过「家是我最后的港湾」的时刻？", d: 3, p: 3 },
+  { t: "你有没有过和父母关系变好的转折点？", d: 3, p: 3 },
+  { t: "你有没有过因为原生家庭而困扰过？", d: 3, p: 3 },
+  { t: "你有没有过想要与家人彻底和解的想法？", d: 3, p: 3 },
+
+  /* d3 p4 */
+  { t: "你内心最深的恐惧是什么？", d: 3, p: 4 },
+  { t: "你最大的遗憾是什么？", d: 3, p: 4 },
+  { t: "你觉得自己值得被爱吗？", d: 3, p: 4 },
+  { t: "你最不能原谅自己的一件事是什么？", d: 3, p: 4 },
+  { t: "你有没有做过让自己后悔一辈子的决定？", d: 3, p: 4 },
+  { t: "你有没有过对自己彻底失望的时刻？", d: 3, p: 4 },
+  { t: "你有没有过想要放弃一切的瞬间？", d: 3, p: 4 },
+  { t: "你有没有过一段自己走不出来的黑暗期？", d: 3, p: 4 },
+  { t: "你有没有过深夜里一个人崩溃的经历？", d: 3, p: 4 },
+  { t: "你有没有过觉得自己不够好的时刻？", d: 3, p: 4 },
+  { t: "你有没有过因为自卑而错过了什么？", d: 3, p: 4 },
+  { t: "你有没有过因为自卑而伤害了自己？", d: 3, p: 4 },
+  { t: "你有没有过因为自卑而伤害了别人？", d: 3, p: 4 },
+  { t: "你有没有过「我配不上」的念头？", d: 3, p: 4 },
+  { t: "你有没有过被一个人彻底改变的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「我其实很孤单」的时刻？", d: 3, p: 4 },
+  { t: "你有没有过想要被理解但没人懂的经历？", d: 3, p: 4 },
+  { t: "你有没有过「原来我一直误会了自己」？", d: 3, p: 4 },
+  { t: "你有没有过「我其实很勇敢」的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「我其实很温柔」的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「我其实值得」的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「我放下了」的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「我原谅了自己」的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「我开始爱自己」的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「我想活下去」的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「我其实很幸福」的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「我其实挺厉害」的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「谢谢你曾经出现过」的时刻？", d: 3, p: 4 },
+  { t: "你最想对未来的自己说什么？", d: 3, p: 4 },
+  { t: "你有没有过「我终将好起来」的信念？", d: 3, p: 4 },
+  { t: "你有没有过想要重新开始的时刻？", d: 3, p: 4 },
+  { t: "你有没有过「我值得被爱」的时刻？", d: 3, p: 4 }
+];
+
+/* =========================================================
+   二、题库 —— 大冒险
+   ========================================================= */
+
+const dares = [
+  /* d1 p1 */
+  { t: "学猫叫三声，要有感情。", d: 1, p: 1 },
+  { t: "模仿在场一个人的说话方式，让大家猜是谁。", d: 1, p: 1 },
+  { t: "用机器人声音说话，直到下一轮结束。", d: 1, p: 1 },
+  { t: "学一种动物走路，绕场一周。", d: 1, p: 1 },
+  { t: "学婴儿哭 30 秒，要逼真。", d: 1, p: 1 },
+  { t: "用最夸张的方式表演「我中了五百万」。", d: 1, p: 1 },
+  { t: "模仿一段广告，要一字不差。", d: 1, p: 1 },
+  { t: "学企鹅走路并发出企鹅叫声，绕场一圈。", d: 1, p: 1 },
+  { t: "用最搞笑的方式念一段新闻。", d: 1, p: 1 },
+  { t: "对着镜子夸自己 30 秒，不许笑。", d: 1, p: 1 },
+  { t: "用方言唱一首流行歌。", d: 1, p: 1 },
+  { t: "模仿一种动物求偶，让大家猜是什么动物。", d: 1, p: 1 },
+  { t: "用鼻子顶着一支笔，坚持到下一轮结束。", d: 1, p: 1 },
+  { t: "学一段网络热门搞笑视频，让大家猜。", d: 1, p: 1 },
+  { t: "做 15 个深蹲，边做边数出声。", d: 1, p: 1 },
+  { t: "金鸡独立闭眼坚持 30 秒。", d: 1, p: 1 },
+  { t: "连续做 15 个开合跳。", d: 1, p: 1 },
+  { t: "用嘴叼起一张纸巾，坚持到下一轮。", d: 1, p: 1 },
+  { t: "抱头深蹲 15 个。", d: 1, p: 1 },
+  { t: "单腿跳绕场一圈。", d: 1, p: 1 },
+  { t: "学螃蟹走路，绕场一圈。", d: 1, p: 1 },
+  { t: "用背顶住墙站立 1 分钟。", d: 1, p: 1 },
+  { t: "做 10 个仰卧起坐，边做边报数。", d: 1, p: 1 },
+  { t: "用最深情的方式朗诵一首诗或一段歌词。", d: 1, p: 1 },
+  { t: "模仿一位明星唱歌，让大家猜是谁。", d: 1, p: 1 },
+  { t: "用方言说一段绕口令。", d: 1, p: 1 },
+  { t: "用嘴巴发出 5 种不同的音效，让大家猜是什么。", d: 1, p: 1 },
+  { t: "用身体摆出一个字母，让大家猜。", d: 1, p: 1 },
+  { t: "模仿三种动物的叫声，连续不断。", d: 1, p: 1 },
+  { t: "现场讲一个笑话，不好笑就再讲一个。", d: 1, p: 1 },
+  { t: "用最夸张的方式表演一段天气预报。", d: 1, p: 1 },
+  { t: "用最深情的语气念一段菜谱。", d: 1, p: 1 },
+
+  /* d1 p2 */
+  { t: "用最丑的表情自拍一张，发到朋友圈。", d: 1, p: 2 },
+  { t: "给通讯录第 5 个人发一句「我想你了」。", d: 1, p: 2 },
+  { t: "对着窗外大喊「我好寂寞」。", d: 1, p: 2 },
+  { t: "唱一首歌，但只能用「喵」代替歌词。", d: 1, p: 2 },
+  { t: "模仿你最喜欢的老师或老板，让大家猜。", d: 1, p: 2 },
+  { t: "用嘴接住别人扔过来的零食，不许用手。", d: 1, p: 2 },
+  { t: "让大家在你脸上用口红画一笔，保留到下一轮。", d: 1, p: 2 },
+  { t: "用脚趾夹起一支笔写字，写自己的名字。", d: 1, p: 2 },
+  { t: "让大家轮流在你头上放一样东西，保持平衡到下一轮。", d: 1, p: 2 },
+  { t: "和别人面对面做深蹲，互相看着对方的眼睛。", d: 1, p: 2 },
+  { t: "让在场一个人坐在你背上，你坚持 30 秒。", d: 1, p: 2 },
+  { t: "让别人坐在你腿上，你坚持 30 秒。", d: 1, p: 2 },
+  { t: "和在场一个人比平板支撑，输的人再接受一个小惩罚。", d: 1, p: 2 },
+  { t: "向在场每个人说一句真心话夸奖。", d: 1, p: 2 },
+  { t: "当众给一位在场的人一个拥抱，要真诚。", d: 1, p: 2 },
+  { t: "让在场的人用三个词形容你，你要接受。", d: 1, p: 2 },
+  { t: "给一位在场的人写一句真心话，念出来。", d: 1, p: 2 },
+  { t: "让大家投票选一个人，你要对他说一句最想说的话。", d: 1, p: 2 },
+  { t: "给一个朋友发一张你的丑照，不许撤回。", d: 1, p: 2 },
+  { t: "打电话给一个朋友，用播音腔念一段广告。", d: 1, p: 2 },
+  { t: "给一个朋友发一条语音，内容是「我请你吃饭」。", d: 1, p: 2 },
+  { t: "给微信列表里最久没联系的人发一条问候。", d: 1, p: 2 },
+  { t: "给微信好友里第 5 个人发一句「在吗」，等他回复。", d: 1, p: 2 },
+  { t: "让在场的人轮流说你的一个优点。", d: 1, p: 2 },
+  { t: "让在场的人轮流说你的一个缺点。", d: 1, p: 2 },
+  { t: "向在场一位朋友说三个你最感谢他的地方。", d: 1, p: 2 },
+  { t: "让一位在场的朋友给你取一个外号，你要接受。", d: 1, p: 2 },
+  { t: "让在场的朋友一起给你唱一首歌。", d: 1, p: 2 },
+  { t: "用最真诚的语气向在场一位朋友说声谢谢。", d: 1, p: 2 },
+  { t: "让在场的人轮流给你一个真实的评价。", d: 1, p: 2 },
+  { t: "给一位在场的朋友一个最真诚的拥抱。", d: 1, p: 2 },
+  { t: "向大家介绍你最好的朋友，说说他的好。", d: 1, p: 2 },
+
+  /* d1 p3 */
+  { t: "给爸爸或妈妈打电话说「我爱你」。", d: 1, p: 3 },
+  { t: "给家人发一条「谢谢你们」，然后放下手机。", d: 1, p: 3 },
+  { t: "向在场一个人道歉，为一件小事。", d: 1, p: 3 },
+  { t: "给通讯录里第 3 个人发一条「我想你了」，不许解释。", d: 1, p: 3 },
+  { t: "给一个朋友发消息说「我有个秘密要告诉你」，然后不回复。", d: 1, p: 3 },
+  { t: "给前任发一条消息，内容由大家决定。", d: 1, p: 3 },
+  { t: "打电话给一个朋友，让他给你唱首歌。", d: 1, p: 3 },
+  { t: "打电话给一个朋友，问他借钱，看他的反应。", d: 1, p: 3 },
+  { t: "录一段 15 秒的视频发到群里，内容由大家指定。", d: 1, p: 3 },
+  { t: "给微信第 10 个联系人发一条语音：「你今天真好看。」", d: 1, p: 3 },
+  { t: "当众向一位在场的人表白 30 秒，要深情。", d: 1, p: 3 },
+  { t: "当众念出你最近一条聊天记录。", d: 1, p: 3 },
+  { t: "向大家展示你手机相册里的第三张照片。", d: 1, p: 3 },
+  { t: "向大家展示你手机里最新的一条朋友圈草稿。", d: 1, p: 3 },
+  { t: "向大家展示你手机里最常用的一条备忘录。", d: 1, p: 3 },
+  { t: "告诉大家你最近一次哭是什么时候。", d: 1, p: 3 },
+  { t: "告诉大家你最近一次感动是什么时候。", d: 1, p: 3 },
+  { t: "告诉大家你手机里最舍不得删的一张照片。", d: 1, p: 3 },
+  { t: "向大家展示你最喜欢的一个表情包。", d: 1, p: 3 },
+  { t: "向大家展示你的手机壁纸，并解释为什么选它。", d: 1, p: 3 },
+  { t: "向大家展示你最喜欢的一个 App。", d: 1, p: 3 },
+  { t: "向大家展示你手机里的置顶聊天框。", d: 1, p: 3 },
+  { t: "告诉大家你最近一次撒谎是什么时候。", d: 1, p: 3 },
+  { t: "告诉大家你最近一次后悔是什么时候。", d: 1, p: 3 },
+  { t: "向大家展示你最近一次买的商品。", d: 1, p: 3 },
+  { t: "向大家展示你最近一次拍照的照片。", d: 1, p: 3 },
+  { t: "向大家展示你包里或口袋里的三样东西。", d: 1, p: 3 },
+  { t: "告诉大家一个你从来没告诉过别人的小习惯。", d: 1, p: 3 },
+  { t: "向大家展示你手机里最常用的一首单曲循环。", d: 1, p: 3 },
+  { t: "向大家展示你手机里最近一次搜索记录。", d: 1, p: 3 },
+  { t: "向大家展示你手机里最近一次消费记录。", d: 1, p: 3 },
+  { t: "告诉大家你手机里最想删除但一直没删的一条消息。", d: 1, p: 3 },
+
+  /* d1 p4 */
+  { t: "让大家翻你手机相册最新一张照片，你来解释。", d: 1, p: 4 },
+  { t: "让左边的人替你编辑一条消息，发给微信置顶的人。", d: 1, p: 4 },
+  { t: "让大家在你朋友圈发一条动态，内容由他们决定。", d: 1, p: 4 },
+  { t: "让在场的人轮流翻你手机，翻到什么解释什么。", d: 1, p: 4 },
+  { t: "向大家展示你手机里和父母的聊天记录截图。", d: 1, p: 4 },
+  { t: "向大家展示你和最好朋友的聊天记录截图。", d: 1, p: 4 },
+  { t: "向大家展示你最近一次和喜欢的人的聊天记录。", d: 1, p: 4 },
+  { t: "告诉大家你最近一次心动是什么时候。", d: 1, p: 4 },
+  { t: "告诉大家你心里最珍惜的一个人是谁。", d: 1, p: 4 },
+  { t: "向大家展示你手机里最私密的一张照片（可遮挡）。", d: 1, p: 4 },
+  { t: "向大家展示你手机里的收藏夹。", d: 1, p: 4 },
+  { t: "向大家展示你手机里的便签。", d: 1, p: 4 },
+  { t: "告诉大家你最近一次梦到的人是谁。", d: 1, p: 4 },
+  { t: "告诉大家你最想对父母说但一直没说的话。", d: 1, p: 4 },
+  { t: "告诉大家你最想对最好的朋友说但一直没说的话。", d: 1, p: 4 },
+  { t: "告诉大家你最想对自己说的一句话。", d: 1, p: 4 },
+  { t: "向大家展示你手机里最舍不得删的一条聊天记录。", d: 1, p: 4 },
+  { t: "向大家展示你手机里最让你感动的一条消息。", d: 1, p: 4 },
+  { t: "向大家展示你手机里最让你开心的一条消息。", d: 1, p: 4 },
+  { t: "向大家展示你手机里最让你难过的一条消息。", d: 1, p: 4 },
+  { t: "告诉大家你最近一次想拥抱一个人是什么时候。", d: 1, p: 4 },
+  { t: "告诉大家你最近一次觉得孤单是什么时候。", d: 1, p: 4 },
+  { t: "告诉大家你最近一次觉得幸福是什么时候。", d: 1, p: 4 },
+  { t: "告诉大家你最近一次觉得自己被爱是什么时候。", d: 1, p: 4 },
+  { t: "向大家展示你手机里最想删掉但一直没删的内容。", d: 1, p: 4 },
+  { t: "向大家展示你手机里最珍贵的回忆。", d: 1, p: 4 },
+  { t: "告诉大家你心里一个从未说出口的愿望。", d: 1, p: 4 },
+  { t: "告诉大家你最想改变自己的一件事。", d: 1, p: 4 },
+  { t: "向大家说一句你最想说的话。", d: 1, p: 4 },
+  { t: "告诉大家你最近一次心里偷偷哭是什么时候。", d: 1, p: 4 },
+  { t: "向大家展示你手机里最舍不得删的一条备忘录。", d: 1, p: 4 },
+  { t: "向大家展示你和某个重要的人最近一次通话记录。", d: 1, p: 4 },
+
+  /* d2 p1 */
+  { t: "做 20 个俯卧撑。", d: 2, p: 1 },
+  { t: "平板支撑 1 分钟，其他人可以干扰你但不能碰你。", d: 2, p: 1 },
+  { t: "单脚站立，直到下一轮结束。", d: 2, p: 1 },
+  { t: "原地转 10 圈，然后走直线。", d: 2, p: 1 },
+  { t: "做 30 个深蹲，边做边数出声。", d: 2, p: 1 },
+  { t: "用一只手做 10 个俯卧撑。", d: 2, p: 1 },
+  { t: "蛙跳绕场一圈。", d: 2, p: 1 },
+  { t: "做 1 分钟高抬腿，不能停。", d: 2, p: 1 },
+  { t: "让两个人抬起你的腿，你用手走路 5 步。", d: 2, p: 1 },
+  { t: "做 10 个波比跳。", d: 2, p: 1 },
+  { t: "现场跳一段舞，没有音乐也要跳。", d: 2, p: 1 },
+  { t: "现场编一段 rap，主题由大家定。", d: 2, p: 1 },
+  { t: "表演一段即兴小品，必须包含「我太难了」这句话。", d: 2, p: 1 },
+  { t: "现场学一段抖音热门舞蹈。", d: 2, p: 1 },
+  { t: "唱一首歌，唱到破音也要坚持。", d: 2, p: 1 },
+  { t: "用三个不同的声音唱同一句歌词。", d: 2, p: 1 },
+  { t: "现场表演一段魔术，不会也要编一个。", d: 2, p: 1 },
+  { t: "现场表演一段哑剧，让大家猜你在做什么。", d: 2, p: 1 },
+  { t: "用嘴巴模仿五种乐器的声音。", d: 2, p: 1 },
+  { t: "现场编一个绕口令，让大家跟着念。", d: 2, p: 1 },
+  { t: "唱一首歌，每句结尾都要加「喵」。", d: 2, p: 1 },
+  { t: "模仿一位在场的人，让大家猜是谁。", d: 2, p: 1 },
+  { t: "现场表演一段双簧，自己配自己。", d: 2, p: 1 },
+  { t: "现场表演一段舞蹈，必须包含转圈和劈叉。", d: 2, p: 1 },
+  { t: "唱一首歌，用最快的速度唱完。", d: 2, p: 1 },
+  { t: "用方言说一段绕口令，至少要 30 秒。", d: 2, p: 1 },
+  { t: "用最夸张的方式表演一段新闻。", d: 2, p: 1 },
+  { t: "用最深情的语气念一段说明书。", d: 2, p: 1 },
+  { t: "用最深情的方式念一段数学公式。", d: 2, p: 1 },
+  { t: "用最悲伤的语气念一段笑话。", d: 2, p: 1 },
+  { t: "做 20 个卷腹，边做边数出声。", d: 2, p: 1 },
+  { t: "单腿站 1 分钟，另一条腿不能落地。", d: 2, p: 1 },
+
+  /* d2 p2 */
+  { t: "背一位异性绕场走一圈。", d: 2, p: 2 },
+  { t: "用嘴把一颗糖果从桌子一头运到另一头，不许用手。", d: 2, p: 2 },
+  { t: "抱着一位在场的人，坚持到下一轮结束。", d: 2, p: 2 },
+  { t: "让别人坐在你腿上，你坚持 1 分钟。", d: 2, p: 2 },
+  { t: "让在场所有人轮流说一个你的缺点，你要微笑听完。", d: 2, p: 2 },
+  { t: "让大家在你朋友圈发一条动态，内容由他们决定。", d: 2, p: 2 },
+  { t: "打电话给一个朋友，问他借钱，看他的反应。", d: 2, p: 2 },
+  { t: "录一段 15 秒的视频发到群里，内容由大家指定。", d: 2, p: 2 },
+  { t: "给一位在场的人写一封简短的感谢信，念出来。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你提一个建议。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你说一句心里话。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你唱一句歌。", d: 2, p: 2 },
+  { t: "让在场的人轮流模仿你。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你取一个外号。", d: 2, p: 2 },
+  { t: "让在场的人轮流说一个你最难忘的瞬间。", d: 2, p: 2 },
+  { t: "让在场的人轮流说一个你最搞笑的瞬间。", d: 2, p: 2 },
+  { t: "让在场的人轮流说一个你最感动的瞬间。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你一个拥抱。", d: 2, p: 2 },
+  { t: "让在场的人轮流和你击掌。", d: 2, p: 2 },
+  { t: "让在场的人轮流和你合影。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你画一张简笔画。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你发一条微信。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你点一首歌。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你写一句祝福。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你一个任务。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你做一次表情包。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你起一个头衔。", d: 2, p: 2 },
+  { t: "让在场的人轮流给你打分。", d: 2, p: 2 },
+  { t: "让大家投票选出谁最可能成为你的合伙人。", d: 2, p: 2 },
+  { t: "向在场的朋友说三个你最想和他一起做的事。", d: 2, p: 2 },
+  { t: "给在场每位朋友发一条专属的微信祝福。", d: 2, p: 2 },
+  { t: "让在场每位朋友给你一句真心话。", d: 2, p: 2 },
+
+  /* d2 p3 */
+  { t: "给一个朋友发一张你的丑照，不许撤回。", d: 2, p: 3 },
+  { t: "给微信好友里第 5 个人发一句「在吗」，等他回复。", d: 2, p: 3 },
+  { t: "给微信第 10 个联系人发一条语音：「你今天真好看。」", d: 2, p: 3 },
+  { t: "给家人发一条「谢谢你们」，然后放下手机。", d: 2, p: 3 },
+  { t: "给通讯录里第 3 个人发一条「我想你了」，不许解释。", d: 2, p: 3 },
+  { t: "给一个朋友发消息说「我有个秘密要告诉你」，然后不回复。", d: 2, p: 3 },
+  { t: "给前任发一条消息，内容由大家决定。", d: 2, p: 3 },
+  { t: "打电话给一个朋友，让他给你唱首歌。", d: 2, p: 3 },
+  { t: "打电话给一个朋友，用播音腔念一段广告。", d: 2, p: 3 },
+  { t: "当众念出你最近一条聊天记录。", d: 2, p: 3 },
+  { t: "向大家展示你手机里的隐藏相册（如果有的话）。", d: 2, p: 3 },
+  { t: "向大家展示你和前任的聊天记录截图。", d: 2, p: 3 },
+  { t: "向大家展示你和暗恋对象的聊天记录截图。", d: 2, p: 3 },
+  { t: "向大家展示你手机里最舍不得删的一条聊天记录。", d: 2, p: 3 },
+  { t: "告诉大家你最近一次心动是什么时候。", d: 2, p: 3 },
+  { t: "告诉大家你最珍惜的一段关系是什么。", d: 2, p: 3 },
+  { t: "告诉大家你最近一次为什么哭。", d: 2, p: 3 },
+  { t: "告诉大家你最想对某个人的一句真心话。", d: 2, p: 3 },
+  { t: "向大家展示你手机里的备忘录。", d: 2, p: 3 },
+  { t: "向大家展示你手机里的收藏夹。", d: 2, p: 3 },
+  { t: "向大家展示你的朋友圈设置。", d: 2, p: 3 },
+  { t: "向大家展示你手机里的黑名单。", d: 2, p: 3 },
+  { t: "向大家展示你最近一次的搜索记录。", d: 2, p: 3 },
+  { t: "向大家展示你最近一次的消费记录。", d: 2, p: 3 },
+  { t: "向大家展示你手机里的外卖订单。", d: 2, p: 3 },
+  { t: "向大家展示你手机里的书签。", d: 2, p: 3 },
+  { t: "向大家展示你手机里的闹钟设置。", d: 2, p: 3 },
+  { t: "向大家展示你手机里的 App 使用时长排行。", d: 2, p: 3 },
+  { t: "向大家展示你手机备忘录的第一条内容。", d: 2, p: 3 },
+  { t: "告诉大家你手机里最想删除但一直没删的一条消息。", d: 2, p: 3 },
+  { t: "向大家展示你手机里最舍不得删的一张截图。", d: 2, p: 3 },
+  { t: "告诉大家你最近一次删朋友圈是什么时候，为什么。", d: 2, p: 3 },
+
+  /* d2 p4 */
+  { t: "让在场的人轮流翻你手机，翻到什么解释什么。", d: 2, p: 4 },
+  { t: "向大家展示你和最好的朋友的聊天记录。", d: 2, p: 4 },
+  { t: "向大家展示你和家人的聊天记录。", d: 2, p: 4 },
+  { t: "向大家展示你和喜欢的人的聊天记录。", d: 2, p: 4 },
+  { t: "向大家展示你手机里最难忘的一张照片。", d: 2, p: 4 },
+  { t: "向大家展示你手机里最让你感动的一张照片。", d: 2, p: 4 },
+  { t: "向大家展示你手机里最让你难过的一张照片。", d: 2, p: 4 },
+  { t: "向大家展示你手机里最想删掉的照片。", d: 2, p: 4 },
+  { t: "向大家展示你手机里最舍不得删的照片。", d: 2, p: 4 },
+  { t: "向大家展示你手机里最新的一张自拍。", d: 2, p: 4 },
+  { t: "向大家展示你手机里最旧的一张照片。", d: 2, p: 4 },
+  { t: "向大家展示你手机相册的分类文件夹。", d: 2, p: 4 },
+  { t: "向大家展示你手机里的隐藏文件夹。", d: 2, p: 4 },
+  { t: "向大家展示你手机里的私密相册。", d: 2, p: 4 },
+  { t: "向大家展示你手机里的私密备忘。", d: 2, p: 4 },
+  { t: "向大家展示你手机里的私密聊天。", d: 2, p: 4 },
+  { t: "告诉大家一个你从未告诉过别人的秘密。", d: 2, p: 4 },
+  { t: "告诉大家你最想对一个人说但一直没说的话。", d: 2, p: 4 },
+  { t: "告诉大家你最想对父母说但一直没说的话。", d: 2, p: 4 },
+  { t: "告诉大家你最想对最好的朋友说但一直没说的话。", d: 2, p: 4 },
+  { t: "告诉大家你最想对自己说的一句话。", d: 2, p: 4 },
+  { t: "告诉大家你最近一次觉得自己被理解是什么时候。", d: 2, p: 4 },
+  { t: "告诉大家你最近一次想要拥抱一个人是什么时候。", d: 2, p: 4 },
+  { t: "告诉大家你最近一次想要被原谅是什么时候。", d: 2, p: 4 },
+  { t: "告诉大家你最近一次想要原谅别人是什么时候。", d: 2, p: 4 },
+  { t: "向大家展示你手机里最珍贵的回忆。", d: 2, p: 4 },
+  { t: "向大家展示你手机里最舍不得删的聊天记录。", d: 2, p: 4 },
+  { t: "向大家展示你手机里最让你骄傲的一条消息。", d: 2, p: 4 },
+  { t: "向大家说一句你最想说的话，可以是任何内容。", d: 2, p: 4 },
+  { t: "告诉大家你手机相册里最珍贵的一段视频。", d: 2, p: 4 },
+  { t: "告诉大家你微信置顶的第一个联系人是谁。", d: 2, p: 4 },
+  { t: "告诉大家你手机里最常用的一句告白台词。", d: 2, p: 4 },
+
+  /* d3 p1 */
+  { t: "当众向一位在场的人表白 30 秒，要深情。", d: 3, p: 1 },
+  { t: "让大家在你朋友圈发一条动态，内容由他们决定。", d: 3, p: 1 },
+  { t: "当众念出你最近一条聊天记录。", d: 3, p: 1 },
+  { t: "当众唱一首你最不擅长的歌。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的舞蹈。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的模仿。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的魔术。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的相声。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的小品。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的乐器。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的方言。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的朗诵。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的绕口令。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的说唱。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的舞蹈，并录视频。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的翻唱，并上传。", d: 3, p: 1 },
+  { t: "当众表演一段你最不擅长的舞蹈，并发朋友圈。", d: 3, p: 1 },
+  { t: "当众做一件你最不擅长的事。", d: 3, p: 1 },
+  { t: "当众做一件你最怕的事。", d: 3, p: 1 },
+  { t: "当众做一件你最不想做的事。", d: 3, p: 1 },
+  { t: "当众做一件你最尴尬的事。", d: 3, p: 1 },
+  { t: "当众做一件你最丢脸的事。", d: 3, p: 1 },
+  { t: "当众做一件你最不愿意的事。", d: 3, p: 1 },
+  { t: "当众做一件你最抗拒的事。", d: 3, p: 1 },
+  { t: "当众做一件你最害怕的事。", d: 3, p: 1 },
+  { t: "当众做一件你最讨厌的事。", d: 3, p: 1 },
+  { t: "当众做一件你最不想尝试的事。", d: 3, p: 1 },
+  { t: "当众做一件你最没做过的事。", d: 3, p: 1 },
+  { t: "当众做一件你最不敢做的事。", d: 3, p: 1 },
+  { t: "当众做一件你最不想让人看见的事。", d: 3, p: 1 },
+  { t: "当众唱一首歌，全程要跑调。", d: 3, p: 1 },
+  { t: "当众表演一段脱口秀，至少 1 分钟。", d: 3, p: 1 },
+
+  /* d3 p2 */
+  { t: "给爸爸或妈妈打电话说「我爱你」。", d: 3, p: 2 },
+  { t: "给微信列表里最久没联系的人发一条问候。", d: 3, p: 2 },
+  { t: "给一个朋友发一张你的丑照，不许撤回。", d: 3, p: 2 },
+  { t: "让在场所有人轮流说一个你的缺点，你要微笑听完。", d: 3, p: 2 },
+  { t: "打电话给一个朋友，问他借钱，看他的反应。", d: 3, p: 2 },
+  { t: "向大家展示你手机里和最好朋友的聊天记录。", d: 3, p: 2 },
+  { t: "向大家展示你手机里和家人的聊天记录。", d: 3, p: 2 },
+  { t: "告诉大家你曾经对最好的朋友撒过的一个谎。", d: 3, p: 2 },
+  { t: "告诉大家你曾经嫉妒过在场哪个人，嫉妒什么。", d: 3, p: 2 },
+  { t: "告诉大家你曾经在背后说过谁的坏话。", d: 3, p: 2 },
+  { t: "告诉大家你曾经对谁做过一件亏心事。", d: 3, p: 2 },
+  { t: "向大家展示你和某个人的最后一次聊天记录。", d: 3, p: 2 },
+  { t: "向大家展示你和某个人的第一次聊天记录。", d: 3, p: 2 },
+  { t: "向大家展示你手机里最舍不得删的一条消息。", d: 3, p: 2 },
+  { t: "向大家展示你手机里最让你感动的一条消息。", d: 3, p: 2 },
+  { t: "向大家展示你手机里最让你难过的一条消息。", d: 3, p: 2 },
+  { t: "向大家展示你手机里最让你开心的一条消息。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友闹别扭是什么时候。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友和好是什么时候。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友一起哭是什么时候。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友笑到肚子疼是什么时候。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友一起熬夜是什么时候。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友一起旅行是什么时候。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友一起做的事。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友一起吃的饭。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友一起看的电影。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友一起打的游戏。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友一起听的歌。", d: 3, p: 2 },
+  { t: "告诉大家你最近一次和朋友一起做的事，让你最难忘。", d: 3, p: 2 },
+  { t: "向在场一位朋友道歉，为你曾经做过的一件小事。", d: 3, p: 2 },
+  { t: "向在场一位朋友说出你心里最想说的一句话。", d: 3, p: 2 },
+  { t: "让在场的人投票决定你说一句什么话。", d: 3, p: 2 },
+
+  /* d3 p3 */
+  { t: "给通讯录里第 3 个人发一条「我想你了」，不许解释。", d: 3, p: 3 },
+  { t: "给一个朋友发消息说「我有个秘密要告诉你」，然后不回复。", d: 3, p: 3 },
+  { t: "给前任发一条消息，内容由大家决定。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的隐藏相册（如果有的话）。", d: 3, p: 3 },
+  { t: "向大家展示你和前任的聊天记录截图。", d: 3, p: 3 },
+  { t: "向大家展示你和暗恋对象的聊天记录截图。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的私密备忘。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的私密相册。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的黑名单。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的收藏夹。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的备忘录。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的搜索记录。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的消费记录。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的外卖订单。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的闹钟设置。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的 App 使用时长排行。", d: 3, p: 3 },
+  { t: "向大家展示你手机里的书签。", d: 3, p: 3 },
+  { t: "告诉大家你最近一次撒谎是什么时候。", d: 3, p: 3 },
+  { t: "告诉大家你最近一次后悔是什么时候。", d: 3, p: 3 },
+  { t: "告诉大家你最近一次想哭是什么时候。", d: 3, p: 3 },
+  { t: "告诉大家你最近一次心动是什么时候。", d: 3, p: 3 },
+  { t: "告诉大家你最近一次觉得孤单是什么时候。", d: 3, p: 3 },
+  { t: "告诉大家你最近一次觉得被爱是什么时候。", d: 3, p: 3 },
+  { t: "告诉大家你最近一次觉得自己不被理解是什么时候。", d: 3, p: 3 },
+  { t: "告诉大家你最近一次觉得被治愈是什么时候。", d: 3, p: 3 },
+  { t: "告诉大家你最想对某个人说但一直没说的一句话。", d: 3, p: 3 },
+  { t: "告诉大家你最想对父母说但一直没说的一句话。", d: 3, p: 3 },
+  { t: "告诉大家你最想对最好的朋友说但一直没说的一句话。", d: 3, p: 3 },
+  { t: "告诉大家你最想对自己说的一句话。", d: 3, p: 3 },
+  { t: "告诉大家一个你从来没告诉过别人的小秘密。", d: 3, p: 3 },
+  { t: "向大家展示你手机里最不愿意给人看的一张照片。", d: 3, p: 3 },
+  { t: "告诉大家你最近一次想要逃离的感觉是什么时候。", d: 3, p: 3 },
+
+  /* d3 p4 */
+  { t: "向大家展示你和喜欢的人的聊天记录。", d: 3, p: 4 },
+  { t: "向大家展示你手机里最珍贵的回忆。", d: 3, p: 4 },
+  { t: "向大家展示你手机里最舍不得删的聊天记录。", d: 3, p: 4 },
+  { t: "向大家展示你手机里最让你骄傲的一条消息。", d: 3, p: 4 },
+  { t: "向大家展示你手机里最让你心碎的一条消息。", d: 3, p: 4 },
+  { t: "向大家展示你手机里最让你愧疚的一条消息。", d: 3, p: 4 },
+  { t: "向大家展示你手机里最让你感动的一条消息。", d: 3, p: 4 },
+  { t: "告诉大家一个你从未告诉过别人的秘密。", d: 3, p: 4 },
+  { t: "告诉大家你最想对一个人说但一直没说的话。", d: 3, p: 4 },
+  { t: "告诉大家你最想对父母说但一直没说的话。", d: 3, p: 4 },
+  { t: "告诉大家你最想对最好的朋友说但一直没说的话。", d: 3, p: 4 },
+  { t: "告诉大家你最想对自己说的一句话。", d: 3, p: 4 },
+  { t: "告诉大家你最近一次觉得自己被理解是什么时候。", d: 3, p: 4 },
+  { t: "告诉大家你最近一次想要拥抱一个人是什么时候。", d: 3, p: 4 },
+  { t: "告诉大家你最近一次想要被原谅是什么时候。", d: 3, p: 4 },
+  { t: "告诉大家你最近一次想要原谅别人是什么时候。", d: 3, p: 4 },
+  { t: "告诉大家你最近一次想要放下一个人是什么时候。", d: 3, p: 4 },
+  { t: "告诉大家你最近一次觉得自己值得被爱是什么时候。", d: 3, p: 4 },
+  { t: "向大家说一句你最想说的话，可以是任何内容。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对在场某个人说的话。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对不在场某个人说的话。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对自己说的话。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对过去的自己说的话。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对未来的自己说的话。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对家人说的话。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对朋友说的话。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对喜欢的人说的话。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对前任说的话。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对曾经伤害过的人说的话。", d: 3, p: 4 },
+  { t: "向大家说一句你最想对曾经帮助过你的人说的话。", d: 3, p: 4 },
+  { t: "告诉大家你心里一个从未说出口的愿望。", d: 3, p: 4 },
+  { t: "告诉大家你最近一次觉得自己终于释怀的时刻。", d: 3, p: 4 }
+];
+
+/* =========================================================
+   三、状态
+   ========================================================= */
+
+const MODE = {
+  truth: { list: truths, name: "真心话" },
+  dare:  { list: dares,  name: "大冒险" }
+};
+
+let mode         = "truth";
+let lastText     = { truth: null, dare: null };
+let lastHue      = -1;
+let drawing      = false;
+let revealTimer  = null;
+let pendingItem  = null;
+let bgLayer      = null;
+
+const selectedDiff = new Set([1, 2, 3]);
+const selectedPriv = new Set([1, 2, 3, 4]);
+
+/* 抽取记录（临时，保存在内存中；刷新页面即清空） */
+const historyItems = [];
+const HISTORY_MAX  = 200;   // 上限保护，避免极端情况下 DOM 过大
+
+const el = {
+  btnTruth:     document.getElementById("btnTruth"),
+  btnDare:      document.getElementById("btnDare"),
+  drawBtn:      document.getElementById("drawBtn"),
+  cardArea:     document.getElementById("cardArea"),
+  cardLabel:    document.getElementById("cardLabel"),
+  cardStage:    document.getElementById("cardStage"),
+  countText:    document.getElementById("countText"),
+  emptyHint:    document.getElementById("emptyHint"),
+  diffChips:    document.getElementById("diffChips"),
+  privChips:    document.getElementById("privChips"),
+  fsBtn:        document.getElementById("fsBtn"),
+  fsIcon:       document.getElementById("fsIcon"),
+  fsText:       document.getElementById("fsText"),
+  soundBtn:     document.getElementById("soundBtn"),
+  soundIcon:    document.getElementById("soundIcon"),
+  historyList:  document.getElementById("historyList"),
+  historyCount: document.getElementById("historyCount"),
+  historyClear: document.getElementById("historyClear")
+};
+
+/* =========================================================
+   四、等级元数据
+   ========================================================= */
+
+const DIFF_NAME = { 1: "轻松", 2: "进阶", 3: "硬核" };
+const PRIV_INFO = {
+  1: { name: "公开级" },
+  2: { name: "朋友级" },
+  3: { name: "私密级" },
+  4: { name: "密友级" }
+};
+
+/* =========================================================
+   五、音效引擎（纯本地合成，无外部文件）
+   ========================================================= */
+
+let audioCtx   = null;
+let masterGain = null;
+let noiseBuf   = null;
+let soundOn    = true;
+
+function ensureAudio() {
+  if (!soundOn) return null;
+  try {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    if (!masterGain) {
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.85;
+      masterGain.connect(audioCtx.destination);
+    }
+    return audioCtx;
+  } catch (e) { return null; }
+}
+
+function getNoise(ctx) {
+  if (noiseBuf && noiseBuf.sampleRate === ctx.sampleRate) return noiseBuf;
+  const len = Math.floor(ctx.sampleRate * 0.4);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  noiseBuf = buf;
+  return buf;
+}
+
+function clickSound(ctx, when, freq, peak, decay) {
+  const buf = getNoise(ctx);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = freq;
+  bp.Q.value = 5;
+
+  const hp = ctx.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 900;
+
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.linearRampToValueAtTime(peak, when + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + decay);
+
+  src.connect(bp); bp.connect(hp); hp.connect(g); g.connect(masterGain);
+
+  const maxOff = Math.max(0, buf.duration - decay - 0.05);
+  const off = Math.random() * maxOff;
+
+  src.start(when, off);
+  src.stop(when + decay + 0.03);
+}
+
+function playDrawSound(durationMs) {
+  const ctx = ensureAudio();
+  if (!ctx) return;
+
+  const dur = Math.max(0.5, durationMs / 1000);
+  const t0  = ctx.currentTime + 0.04;
+
+  let t = 0, guard = 0;
+  while (t < dur - 0.22 && guard < 70) {
+    const p = t / dur;
+    const gap = 0.042 + p * 0.11;
+    const freq = 1300 + Math.random() * 1700;
+    const peak = 0.045 + Math.random() * 0.05;
+    const decay = 0.045 + Math.random() * 0.05;
+
+    clickSound(ctx, t0 + t, freq, peak, decay);
+
+    t += gap * (0.65 + Math.random() * 0.7);
+    guard++;
+  }
+
+  clickSound(ctx, t0 + dur - 0.16, 2400 + Math.random() * 500, 0.11, 0.14);
+  clickSound(ctx, t0 + dur - 0.07, 3300, 0.06, 0.20);
+}
+
+/* =========================================================
+   六、全屏控制
+   ========================================================= */
+
+const docEl = document.documentElement;
+
+const requestFs = docEl.requestFullscreen ||
+                  docEl.webkitRequestFullscreen ||
+                  docEl.webkitRequestFullScreen ||
+                  docEl.msRequestFullscreen;
+
+const exitFs = document.exitFullscreen ||
+               document.webkitExitFullscreen ||
+               document.webkitExitFullScreen ||
+               document.msExitFullscreen;
+
+const fsSupported = !!(requestFs && exitFs);
+
+let firstGestureDone = false;
+let userOptOut       = false;
+
+function isFull() {
+  return !!(document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.msFullscreenElement);
+}
+
+function enterFull() {
+  if (!fsSupported) return Promise.reject(new Error("unsupported"));
+  if (isFull()) return Promise.resolve();
+  try {
+    const r = requestFs.call(docEl, { navigationUI: "hide" });
+    return (r && typeof r.then === "function") ? r : Promise.resolve();
+  } catch (err) { return Promise.reject(err); }
+}
+
+function exitFull() {
+  if (!fsSupported || !isFull()) return Promise.resolve();
+  try {
+    const r = exitFs.call(document);
+    return (r && typeof r.then === "function") ? r : Promise.resolve();
+  } catch (err) { return Promise.reject(err); }
+}
+
+const ICON_FS_ENTER =
+  '<polyline points="4 9 4 4 9 4"></polyline>' +
+  '<polyline points="15 4 20 4 20 9"></polyline>' +
+  '<polyline points="20 15 20 20 15 20"></polyline>' +
+  '<polyline points="9 20 4 20 4 15"></polyline>';
+
+const ICON_FS_EXIT =
+  '<polyline points="9 4 9 9 4 9"></polyline>' +
+  '<polyline points="15 4 15 9 20 9"></polyline>' +
+  '<polyline points="20 15 15 15 15 20"></polyline>' +
+  '<polyline points="4 15 9 15 9 20"></polyline>';
+
+const ICON_SOUND_ON =
+  '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>' +
+  '<path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>' +
+  '<path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>';
+
+const ICON_SOUND_OFF =
+  '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>' +
+  '<line x1="23" y1="9" x2="17" y2="15"></line>' +
+  '<line x1="17" y1="9" x2="23" y2="15"></line>';
+
+function updateFsBtn() {
+  if (!fsSupported) { el.fsBtn.style.display = "none"; return; }
+  const full = isFull();
+  el.fsIcon.innerHTML = full ? ICON_FS_EXIT : ICON_FS_ENTER;
+  el.fsText.textContent = full ? "退出全屏" : "沉浸全屏";
+  el.fsBtn.classList.toggle("is-full", full);
+  el.fsBtn.setAttribute("aria-label", full ? "退出全屏" : "进入全屏");
+}
+
+function toggleFull() {
+  if (isFull()) {
+    userOptOut = true;
+    exitFull().catch(function () {});
+  } else {
+    userOptOut = false;
+    enterFull().catch(function () {});
+  }
+}
+
+function bindFirstGesture() {
+  function handler(e) {
+    if (firstGestureDone) return;
+    firstGestureDone = true;
+    document.removeEventListener("pointerdown", handler, true);
+    document.removeEventListener("keydown", handler, true);
+    if (e && e.target && el.fsBtn.contains(e.target)) return;
+    if (!isFull() && !userOptOut) enterFull().catch(function () {});
+  }
+  document.addEventListener("pointerdown", handler, true);
+  document.addEventListener("keydown", handler, true);
+}
+
+["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"]
+  .forEach(function (evt) {
+    document.addEventListener(evt, function () {
+      updateFsBtn();
+      if (!isFull()) firstGestureDone = true;
+      else userOptOut = false;
+    });
+  });
+
+/* =========================================================
+   七、抽取时长算法
+   ========================================================= */
+
+function calcDuration(text) {
+  const chars    = text.replace(/\s/g, "").length;
+  const BASE     = 800;
+  const PER_CHAR = 75;
+  const MIN      = 1200;
+  const MAX      = 3500;
+
+  return Math.min(MAX, Math.max(MIN, BASE + chars * PER_CHAR));
+}
+
+/* =========================================================
+   八、工具函数
+   ========================================================= */
+
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+
+function formatTime(date) {
+  return pad2(date.getHours()) + ":" + pad2(date.getMinutes()) + ":" + pad2(date.getSeconds());
+}
+
+function lockUI(lock) {
+  el.btnTruth.disabled = lock;
+  el.btnDare.disabled  = lock;
+  el.drawBtn.disabled  = lock || getFilteredList().length === 0;
+}
+
+function getFilteredList() {
+  return MODE[mode].list.filter(function (item) {
+    return selectedDiff.has(item.d) && selectedPriv.has(item.p);
+  });
+}
+
+function countFiltered(which) {
+  return MODE[which].list.filter(function (item) {
+    return selectedDiff.has(item.d) && selectedPriv.has(item.p);
+  }).length;
+}
+
+function updateCount() {
+  const t = countFiltered("truth");
+  const d = countFiltered("dare");
+  el.countText.textContent =
+    "筛选结果：真心话 " + t + " 条 · 大冒险 " + d + " 条 · 总计 " + (t + d) + " 条";
+
+  const empty = getFilteredList().length === 0;
+  el.emptyHint.style.display = empty ? "block" : "none";
+  if (!drawing) el.drawBtn.disabled = empty;
+}
+
+/* =========================================================
+   九、抽取记录
+   ---------------------------------------------------------
+   · 只保存在内存中，刷新页面即清空
+   · 用户主动点击「清空记录」才清空
+   · 二次点击确认，避免误操作
+   · 无自动清除、无自动过期
+   ========================================================= */
+
+let historyConfirmTimer = null;
+
+function renderHistory() {
+  const n = historyItems.length;
+
+  el.historyCount.textContent = n === 0 ? "" : ("共 " + n + " 条");
+
+  if (n === 0) {
+    el.historyList.innerHTML =
+      '<span class="history-empty">还没有抽取记录<br>每次抽到的题目会自动记在这里</span>';
+    el.historyClear.disabled = true;
+  } else {
+    el.historyList.innerHTML = historyItems.map(function (h) {
+      const modeIcon  = h.mode === "truth" ? "💬" : "🔥";
+      const modeClass = h.mode === "truth" ? "h-truth" : "h-dare";
+      const stars     = "⭐".repeat(h.d);
+      const timeStr   = formatTime(h.time);
+
+      return '<div class="history-item ' + modeClass + '">' +
+        '<div class="history-meta">' +
+          '<span class="hm-mode">' + modeIcon + '</span>' +
+          '<span class="hm-diff">' + stars + '</span>' +
+          '<span class="hm-priv priv-' + h.p + '"></span>' +
+          '<span class="hm-time">' + timeStr + '</span>' +
+        '</div>' +
+        '<div class="history-text">' + escapeHtml(h.text) + '</div>' +
+      '</div>';
+    }).join("");
+
+    el.historyClear.disabled = false;
+  }
+
+  /* 重置清空按钮的确认状态 */
+  cancelHistoryConfirm();
+}
+
+function addHistory(item) {
+  historyItems.unshift({
+    mode: item.mode,
+    text: item.t,
+    d: item.d,
+    p: item.p,
+    time: new Date()
+  });
+
+  if (historyItems.length > HISTORY_MAX) {
+    historyItems.length = HISTORY_MAX;
+  }
+
+  renderHistory();
+}
+
+function cancelHistoryConfirm() {
+  clearTimeout(historyConfirmTimer);
+  historyConfirmTimer = null;
+  el.historyClear.textContent = "清空记录";
+  el.historyClear.classList.remove("confirming");
+  el.historyClear.dataset.confirm = "0";
+}
+
+function initHistory() {
+  renderHistory();
+
+  el.historyClear.addEventListener("click", function () {
+    if (historyItems.length === 0) return;
+
+    if (el.historyClear.dataset.confirm === "1") {
+      /* 用户确认清空 */
+      historyItems.length = 0;
+      renderHistory();
+      return;
+    }
+
+    /* 首次点击：进入确认状态 */
+    el.historyClear.textContent = "确认清空？";
+    el.historyClear.classList.add("confirming");
+    el.historyClear.dataset.confirm = "1";
+
+    clearTimeout(historyConfirmTimer);
+    historyConfirmTimer = setTimeout(cancelHistoryConfirm, 3000);
+  });
+}
+
+/* =========================================================
+   十、动态主题生成（仅用于背景、卡片底色、进度条）
+   ========================================================= */
+
+function generateTheme() {
+  let h;
+  let guard = 0;
+  do {
+    h = Math.floor(Math.random() * 360);
+    guard++;
+  } while (guard < 10 && Math.abs(h - lastHue) < 25);
+
+  lastHue = h;
+
+  const stops = [
+    { h: h,               s: 62, l: 90 },
+    { h: (h + 60)  % 360, s: 55, l: 88 },
+    { h: (h + 150) % 360, s: 50, l: 91 },
+    { h: (h + 230) % 360, s: 58, l: 89 }
+  ];
+
+  const bg = "linear-gradient(135deg, " +
+    "hsl(" + stops[0].h + ", " + stops[0].s + "%, " + stops[0].l + "%) 0%, " +
+    "hsl(" + stops[1].h + ", " + stops[1].s + "%, " + stops[1].l + "%) 35%, " +
+    "hsl(" + stops[2].h + ", " + stops[2].s + "%, " + stops[2].l + "%) 70%, " +
+    "hsl(" + stops[3].h + ", " + stops[3].s + "%, " + stops[3].l + "%) 100%)";
+
+  const soft = "hsl(" + h + ", 55%, 97%)";
+  const main = "hsl(" + h + ", 62%, 55%)";
+
+  return { h: h, bg: bg, soft: soft, main: main };
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+
+  root.style.setProperty("--theme-color", theme.main);
+  root.style.setProperty("--theme-soft",  theme.soft);
+
+  const old = bgLayer;
+
+  const layer = document.createElement("div");
+  layer.className = "bg-layer";
+  layer.style.background = theme.bg;
+  document.body.appendChild(layer);
+  bgLayer = layer;
+
+  requestAnimationFrame(function () {
+    layer.classList.add("visible");
+    if (old) {
+      old.classList.remove("visible");
+      setTimeout(function () { old.remove(); }, 1000);
+    }
+  });
+}
+
+function pickTheme() {
+  applyTheme(generateTheme());
+}
+
+/* =========================================================
+   十一、模式切换
+   ========================================================= */
+
+function setMode(next) {
+  if (drawing) return;
+
+  mode = next;
+  const isTruth = next === "truth";
+
+  el.btnTruth.classList.toggle("active", isTruth);
+  el.btnDare.classList.toggle("active", !isTruth);
+  el.cardLabel.textContent = MODE[next].name;
+
+  el.cardArea.setAttribute("data-mode", next);
+  el.drawBtn.setAttribute("data-mode", next);
+
+  el.cardStage.innerHTML = '<p class="card-text placeholder">点击下方按钮抽取题目</p>';
+  updateCount();
+}
+
+/* =========================================================
+   十二、筛选交互
+   ========================================================= */
+
+function initFilters() {
+  el.diffChips.querySelectorAll(".chip").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      const d = Number(chip.dataset.d);
+      if (selectedDiff.has(d)) {
+        if (selectedDiff.size > 1) { selectedDiff.delete(d); chip.classList.remove("active"); }
+      } else {
+        selectedDiff.add(d); chip.classList.add("active");
+      }
+      updateCount();
+    });
+  });
+
+  el.privChips.querySelectorAll(".chip").forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      const p = Number(chip.dataset.p);
+      if (selectedPriv.has(p)) {
+        if (selectedPriv.size > 1) { selectedPriv.delete(p); chip.classList.remove("active"); }
+      } else {
+        selectedPriv.add(p); chip.classList.add("active");
+      }
+      updateCount();
+    });
+  });
+}
+
+/* =========================================================
+   十三、抽取流程
+   ========================================================= */
+
+function draw() {
+  if (drawing) return;
+
+  const pool = getFilteredList();
+  if (pool.length === 0) { updateCount(); return; }
+
+  drawing = true;
+  lockUI(true);
+
+  let candidates = pool.filter(function (item) {
+    return item.t !== lastText[mode];
+  });
+  if (candidates.length === 0) candidates = pool;
+
+  const picked = candidates[Math.floor(Math.random() * candidates.length)];
+  lastText[mode] = picked.t;
+  pendingItem = picked;
+
+  const duration = calcDuration(picked.t);
+
+  playDrawSound(duration);
+  showLoading(duration);
+  revealTimer = setTimeout(finishDraw, duration);
+}
+
+function showLoading(duration) {
+  el.cardStage.innerHTML =
+    '<div class="loader">' +
+      '<div class="spinner"></div>' +
+      '<div class="loader-text">抽取中' +
+        '<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>' +
+      '</div>' +
+      '<div class="loader-track"><div class="loader-fill" id="loaderFill"></div></div>' +
+    '</div>';
+
+  const fill = document.getElementById("loaderFill");
+  void fill.offsetWidth;
+
+  fill.style.transition = "width " + duration + "ms linear";
+  fill.style.width = "100%";
+
+  el.cardArea.classList.add("clickable");
+}
+
+function finishDraw() {
+  if (!pendingItem) return;
+
+  clearTimeout(revealTimer);
+  revealTimer = null;
+
+  const item = pendingItem;
+  pendingItem = null;
+
+  const stars = "⭐".repeat(item.d);
+  const dName = DIFF_NAME[item.d];
+  const pInfo = PRIV_INFO[item.p];
+
+  el.cardStage.innerHTML =
+    '<div class="card-main reveal">' +
+      '<p class="card-text">' + escapeHtml(item.t) + '</p>' +
+      '<div class="card-tags">' +
+        '<span class="tag tag-diff d-' + item.d + '" title="难度：' + dName + '">' +
+          stars + " " + dName +
+        '</span>' +
+        '<span class="tag tag-priv priv-' + item.p + '" title="私密等级：' + pInfo.name + '">' +
+          '<i class="dot"></i>' + pInfo.name +
+        '</span>' +
+      '</div>' +
+    '</div>';
+
+  el.cardArea.classList.remove("clickable");
+  drawing = false;
+  lockUI(false);
+
+  /* 记录本次抽取（临时，内存保存） */
+  addHistory({
+    mode: mode,
+    t: item.t,
+    d: item.d,
+    p: item.p
+  });
+}
+
+/* =========================================================
+   十四、音效开关
+   ========================================================= */
+
+function updateSoundBtn() {
+  el.soundIcon.innerHTML = soundOn ? ICON_SOUND_ON : ICON_SOUND_OFF;
+  el.soundBtn.classList.toggle("muted", !soundOn);
+  el.soundBtn.setAttribute("aria-label", soundOn ? "关闭音效" : "开启音效");
+}
+
+function initSound() {
+  updateSoundBtn();
+
+  el.soundBtn.addEventListener("click", function () {
+    soundOn = !soundOn;
+    updateSoundBtn();
+    if (soundOn) ensureAudio();
+  });
+}
+
+/* =========================================================
+   十五、全局主题变换
+   ========================================================= */
+
+const INTERACTIVE_SELECTOR = "button, .card-area.clickable";
+
+document.addEventListener("click", function (e) {
+  if (!e.target || !e.target.closest) return;
+
+  const node = e.target.closest(INTERACTIVE_SELECTOR);
+  if (!node) return;
+  if (node.disabled) return;
+
+  pickTheme();
+}, true);
+
+/* =========================================================
+   十六、初始化
+   ========================================================= */
+
+(function init() {
+  applyTheme(generateTheme());
+
+  setMode("truth");
+  initFilters();
+  initSound();
+  initHistory();
+  updateCount();
+
+  if (!fsSupported) {
+    el.fsBtn.style.display = "none";
+  } else {
+    updateFsBtn();
+    el.fsBtn.addEventListener("click", toggleFull);
+  }
+
+  el.btnTruth.addEventListener("click", function () { setMode("truth"); });
+  el.btnDare.addEventListener("click",  function () { setMode("dare"); });
+  el.drawBtn.addEventListener("click",  draw);
+
+  el.cardArea.addEventListener("click", function () {
+    if (drawing && pendingItem) finishDraw();
+  });
+
+  if (fsSupported) {
+    enterFull().catch(function () {
+      bindFirstGesture();
+    });
+  }
+})();
+</script>
+</body>
+</html>
